@@ -1,0 +1,157 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ form.instance.pk|yesno:"Editar,Nuevo" }} Cliente{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="display-6 mb-0">
+                        {% if form.instance.pk %}
+                        <i class="fas fa-user-edit text-warning me-2"></i>Editar Cliente
+                        {% else %}
+                        <i class="fas fa-user-plus text-success me-2"></i>Nuevo Cliente
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mt-2 mb-0">
+                        {% if form.instance.pk %}
+                        Modificar información del cliente
+                        {% else %}
+                        Registrar un nuevo cliente en el sistema
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'clientes:list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3">
+                                <i class="fas fa-id-card text-primary me-2"></i>
+                                Información Personal
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.ci_cliente.id_for_label }}" class="form-label">CI</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
+                                        {{ form.ci_cliente }}
+                                    </div>
+                                    {% if form.ci_cliente.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.ci_cliente.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        {{ form.nombre }}
+                                    </div>
+                                    {% if form.nombre.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.nombre.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                 <div class="col-md-6">
+                                    <label for="{{ form.apellido.id_for_label }}" class="form-label">Apellido</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        {{ form.apellido }}
+                                    </div>
+                                    {% if form.apellido.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.apellido.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="mb-4">
+                            <h5 class="card-title mb-3">
+                                <i class="fas fa-address-book text-success me-2"></i>
+                                Información de Contacto
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                        {{ form.telefono }}
+                                    </div>
+                                    {% if form.telefono.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.telefono.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                        {{ form.direccion }}
+                                    </div>
+                                    {% if form.direccion.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.direccion.errors|join:", " }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'clientes:list' %}" class="btn btn-light">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>
+                                {% if form.instance.pk %}
+                                Guardar Cambios
+                                {% else %}
+                                Crear Cliente
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Form validation
+(function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+{% endblock %}
+
+{% endblock %}

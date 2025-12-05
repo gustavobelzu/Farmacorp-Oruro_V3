@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Formulario Venta{% endblock %}
+{% block content %}
+<h2>{% if form.instance.pk %}Editar Venta{% else %}Nueva Venta{% endif %}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-success" type="submit">💾 Guardar</button>
+    <a href="{% url 'ventas:venta_list' %}" class="btn btn-secondary">⬅ Volver</a>
+</form>
+{% endblock %}
+

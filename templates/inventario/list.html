@@ -1,0 +1,266 @@
+﻿{% extends "base.html" %}
+{% block title %}Gestión de Inventario{% endblock %}
+
+{% block extrahead %}
+<style>
+    .table-responsive {
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+    
+    .btn-group {
+        flex-wrap: nowrap;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.25rem;
+    }
+    
+    tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-warehouse me-2"></i>Gestión de Inventario
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Inventario</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'inventario:create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nuevo Registro
+            </a>
+            <button class="btn btn-outline-primary" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-box me-2"></i>Producto</label>
+                    <input type="text" class="form-control" id="filterProducto" placeholder="Buscar producto...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-store me-2"></i>Sucursal</label>
+                    <select class="form-select" id="filterSucursal">
+                        <option value="">Todas</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id_sucursal }}">{{ sucursal.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-tasks me-2"></i>Estado</label>
+                    <select class="form-select" id="filterEstado">
+                        <option value="">Todos</option>
+                        <option value="En Stock">En Stock</option>
+                        <option value="Stock Bajo">Stock Bajo</option>
+                        <option value="Sin Stock">Sin Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="inventarioTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Producto</th>
+                            <th>Sucursal</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                            <th>Última Actualización</th>
+                            <th>Ubicación</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inv in inventarios %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    {% if inv.producto.imagen %}
+                                        <img src="{{ inv.producto.imagen.url }}" alt="{{ inv.producto.nombre }}" 
+                                             class="rounded me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                             style="width: 40px; height: 40px;">
+                                            <i class="fas fa-box text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0">{{ inv.producto.nombre }}</h6>
+                                        <small class="text-muted">COD: {{ inv.producto.codigo }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-flex align-items-center">
+                                    <i class="fas fa-store text-primary me-2"></i>
+                                    {{ inv.sucursal.nombre }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">{{ inv.cantidad }}</span>
+                                    {% if inv.cantidad > inv.stock_minimo %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% elif inv.cantidad > 0 %}
+                                        <span class="badge bg-warning text-dark">Bajo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Sin Stock</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>{{ inv.stock_minimo }}</td>
+                            <td>
+                                {% if inv.cantidad > inv.stock_minimo %}
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>En Stock
+                                    </span>
+                                {% elif inv.cantidad > 0 %}
+                                    <span class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Stock Bajo
+                                    </span>
+                                {% else %}
+                                    <span class="text-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Sin Stock
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ inv.ultima_actualizacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    {{ inv.ubicacion|default:"No especificada" }}
+                                </small>
+                            </td>
+                            <td class="text-end pe-4">
+                               <div class="btn-group dropstart">
+                                <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'inventario:update' inv.id_inventario %}">
+                                            <i class="fas fa-edit me-2 text-warning"></i>Editar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'inventario:delete' inv.id_inventario %}">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-inbox"></i> No hay inventarios registrados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtrar tabla en tiempo real
+        const filterProducto = document.getElementById('filterProducto');
+        const filterSucursal = document.getElementById('filterSucursal');
+        const filterEstado = document.getElementById('filterEstado');
+        const filterForm = document.getElementById('filterForm');
+        const inventarioTable = document.getElementById('inventarioTable');
+
+        function applyFilters() {
+            const producto = filterProducto.value.toLowerCase();
+            const sucursal = filterSucursal.value;
+            const estado = filterEstado.value;
+
+            Array.from(inventarioTable.querySelectorAll('tbody tr')).forEach(row => {
+                if (row.cells.length < 8) return; // Skip empty message rows
+                
+                const productoName = row.cells[0].textContent.toLowerCase();
+                const sucursalText = row.cells[1].textContent.trim();
+                const rowEstado = row.cells[4].textContent.trim();
+                
+                const matchProducto = !producto || productoName.includes(producto);
+                const matchSucursal = !sucursal || sucursalText.includes(sucursal);
+                const matchEstado = !estado || rowEstado.includes(estado);
+
+                row.style.display = (matchProducto && matchSucursal && matchEstado) ? '' : 'none';
+            });
+        }
+
+        // Filtrar en tiempo real
+        filterProducto.addEventListener('keyup', applyFilters);
+        filterSucursal.addEventListener('change', applyFilters);
+        filterEstado.addEventListener('change', applyFilters);
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            applyFilters();
+        });
+
+        // Exportar tabla a CSV
+        document.getElementById('exportExcel').addEventListener('click', function() {
+            const table = document.getElementById('inventarioTable');
+            let csv = 'Producto,Sucursal,Stock Actual,Stock Mínimo,Estado,Última Actualización,Ubicación\n';
+            
+            Array.from(table.querySelectorAll('tbody tr')).forEach(row => {
+                if (row.style.display !== 'none' && row.cells.length === 8) {
+                    const cells = Array.from(row.cells).slice(0, 7).map(cell => {
+                        return '"' + cell.textContent.trim().replace(/"/g, '""') + '"';
+                    }).join(',');
+                    csv += cells + '\n';
+                }
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'inventario_' + new Date().toISOString().slice(0, 10) + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    });
+</script>
+{% endblock %}
+
+

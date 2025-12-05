@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-users me-2"></i>Gestión de Usuarios
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Usuarios</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'usuario:register' %}" class="btn btn-success">
+                <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+            </a>
+            <button class="btn btn-outline-primary" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Usuario
+                    </label>
+                    <input type="text" class="form-control" id="filterUsername" placeholder="Buscar por usuario...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-user-tag me-2"></i>Rol
+                    </label>
+                    <select class="form-select" id="filterRol">
+                        <option value="">Todos los roles</option>
+                        <option value="administrador">Administrador</option>
+                        <option value="farmaceutico">Farmacéutico</option>
+                        <option value="encargado_almacen">Encargado de Almacén</option>
+                        <option value="cliente">Cliente</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar me-2"></i>Fecha
+                    </label>
+                    <input type="date" class="form-control" id="filterFecha">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Total Usuarios</h6>
+                            <h3 class="mb-0">{{ usuarios.count }}</h3>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Empleados</h6>
+                            <h3 class="mb-0">{{ total_empleados|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-user-tie fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Clientes</h6>
+                            <h3 class="mb-0">{{ total_clientes|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-user-friends fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Usuarios Activos</h6>
+                            <h3 class="mb-0">{{ usuarios_activos|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-user-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="usuariosTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Rol</th>
+                            <th>Asociado</th>
+                            <th>Estado</th>
+                            <th>Registro</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in usuarios %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ u.username }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-envelope me-1"></i>{{ u.email }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if u.rol == 'administrador' %}bg-danger{% elif u.rol == 'farmaceutico' %}bg-success{% elif u.rol == 'encargado_almacen' %}bg-warning{% else %}bg-info{% endif %}">
+                                    <i class="fas fa-user-tag me-1"></i>{{ u.rol|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if u.ci_empleado %}
+                                    <span class="d-block">
+                                        <i class="fas fa-user-tie me-2 text-primary"></i>
+                                        {{ u.ci_empleado.nombre }}
+                                    </span>
+                                    <small class="text-muted">Empleado</small>
+                                {% elif u.ci_cliente %}
+                                    <span class="d-block">
+                                        <i class="fas fa-user me-2 text-info"></i>
+                                        {{ u.ci_cliente.nombre }}
+                                    </span>
+                                    <small class="text-muted">Cliente</small>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Inactivo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ u.fecha_creacion|date:"d/m/Y" }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ u.fecha_creacion|date:"H:i" }}
+                                </small>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'usuario:editar' u.pk %}">
+                                                <i class="fas fa-edit text-warning me-2"></i>Editar
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger btn-delete" href="#" 
+                                               data-delete-url="{% url 'usuario:eliminar' u.pk %}" onclick="return false;">
+                                                <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item btn-details" href="#" data-user-id="{{ u.pk }}" onclick="return false;">
+                                                <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item btn-reset-password" href="#" data-user-id="{{ u.pk }}" onclick="return false;">
+                                                <i class="fas fa-key me-2"></i>Resetear Contraseña
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-3x mb-3"></i>
+                                    <h5 class="mb-0">No hay usuarios registrados</h5>
+                                    <p class="mb-0">Registra un nuevo usuario para comenzar</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar este usuario?</p>
+                <p class="text-danger">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta acción eliminará el acceso del usuario al sistema.
+                    </small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resetear Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas resetear la contraseña de este usuario?</p>
+                <p class="text-warning">
+                    <small>
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Se enviará un correo al usuario con las instrucciones para establecer una nueva contraseña.
+                    </small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="confirmResetBtn">
+                    <i class="fas fa-key me-2"></i>Resetear Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles del Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="userDetails">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const table = new DataTable('#usuariosTable', {
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        responsive: true,
+        dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center"ip>',
+        pageLength: 10,
+    });
+
+    // Confirm Delete Function
+    window.confirmDelete = function(deleteUrl) {
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    };
+
+    // Event listener para botón de eliminar
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const deleteUrl = this.getAttribute('data-delete-url');
+            confirmDelete(deleteUrl);
+        });
+    });
+
+    // Reset Password Function
+    window.resetPassword = function(userId) {
+        const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        document.getElementById('confirmResetBtn').onclick = async function() {
+            try {
+                const response = await fetch(`/api/usuario/${userId}/reset-password/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                });
+                if (!response.ok) throw new Error('Error al resetear la contraseña');
+                
+                modal.hide();
+                alert('Se ha enviado un correo con las instrucciones para resetear la contraseña.');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        };
+        modal.show();
+    };
+
+    // Event listener para botón de resetear contraseña
+    document.querySelectorAll('.btn-reset-password').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const userId = this.getAttribute('data-user-id');
+            resetPassword(userId);
+        });
+    });
+
+    // Show Details Function
+    window.showDetails = async function(userId) {
+        const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        const content = document.getElementById('userDetails');
+        content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/usuario/${userId}/details/`);
+            if (!response.ok) throw new Error('Error al cargar los detalles');
+            const data = await response.json();
+            
+            content.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-user me-2"></i>Información del Usuario
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Usuario:</strong> ${data.username}</li>
+                                    <li><strong>Email:</strong> ${data.email}</li>
+                                    <li><strong>Rol:</strong> ${data.rol}</li>
+                                    <li><strong>Estado:</strong> ${data.estado}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>Detalles Adicionales
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Último Acceso:</strong> ${data.ultimo_acceso}</li>
+                                    <li><strong>Fecha Registro:</strong> ${data.fecha_registro}</li>
+                                    <li><strong>Permisos:</strong> ${data.permisos}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-3 text-muted">
+                            <i class="fas fa-history me-2"></i>Historial de Actividad
+                        </h6>
+                        ${data.actividades && data.actividades.length > 0 ? `
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Actividad</th>
+                                            <th>IP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.actividades.map(act => `
+                                            <tr>
+                                                <td>${act.fecha || '-'}</td>
+                                                <td>${act.descripcion || '-'}</td>
+                                                <td>${act.ip || '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ` : '<p class="text-muted mb-0">No hay actividades registradas</p>'}
+                    </div>
+                </div>`;
+        } catch (error) {
+            content.innerHTML = `
+                <div class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                    <h5 class="mb-0">Error al cargar los detalles</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>`;
+        }
+    };
+
+    // Export to Excel
+    document.getElementById('exportExcel').addEventListener('click', function() {
+        const workbook = XLSX.utils.table_to_book(document.getElementById('usuariosTable'));
+        XLSX.writeFile(workbook, 'Usuarios_' + new Date().toISOString().split('T')[0] + '.xlsx');
+    });
+
+    // Event listener para botón de detalles
+    document.querySelectorAll('.btn-details').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const userId = this.getAttribute('data-user-id');
+            showDetails(userId);
+        });
+    });
+
+    // Filter Form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+
+        // Real-time filtering
+        document.querySelectorAll('#filterForm input, #filterForm select').forEach(element => {
+            element.addEventListener('input', applyFilters);
+        });
+    }
+
+    // Apply filters function
+    function applyFilters() {
+        const username = document.getElementById('filterUsername').value.toLowerCase();
+        const rol = document.getElementById('filterRol').value;
+        const fecha = document.getElementById('filterFecha').value;
+
+        table.search('').columns().search('').draw();
+
+        if (username) table.column(0).search(username);
+        if (rol) table.column(1).search(rol);
+        if (fecha) table.column(4).search(fecha);
+
+        table.draw();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

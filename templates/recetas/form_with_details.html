@@ -1,0 +1,579 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_create %}Nueva{% else %}Editar{% endif %} Receta{% endblock %}
+
+{% block extrahead %}
+<link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<style>
+    body { background-color: #f5f5f5; }
+
+    .section-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header i { font-size: 1.25rem; }
+    .section-header h5 { margin: 0; font-weight: 600; font-size: 1.1rem; }
+
+    .form-card {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .medicine-row {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-left: 4px solid #667eea;
+        border-radius: 0.375rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .medicine-row.empty-form { display: none; }
+    .medicine-row.deleted { opacity: 0.5; background: #fff3cd; border-left-color: #ff6b6b; }
+
+    .medicine-number {
+        display: inline-flex;
+        background: #667eea;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    .btn-add-medicine {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .btn-add-medicine:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .delete-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .delete-checkbox-wrapper:hover { text-decoration: underline; }
+
+    .field-group { margin-bottom: 1rem; }
+    .field-group label { font-weight: 500; margin-bottom: 0.5rem; color: #333; display: block; }
+    .field-group input, .field-group select, .field-group textarea {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        font-size: 0.95rem;
+    }
+
+    .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .field-group textarea { resize: vertical; min-height: 60px; }
+
+    .form-group-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .btn-group-action {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.75rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s;
+        flex: 1;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary-custom {
+        background: #e9ecef;
+        border: none;
+        color: #495057;
+        padding: 0.75rem 1.75rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-weight: 500;
+        flex: 1;
+    }
+
+    .btn-secondary-custom:hover { background: #dee2e6; }
+
+    .alert-custom {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-top {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .header-top h2 { margin: 0 0 0.5rem 0; font-size: 1.75rem; }
+
+    .breadcrumb-custom { background: transparent; padding: 0; margin: 0.5rem 0 0 0; }
+    .breadcrumb-custom a { color: rgba(255, 255, 255, 0.8); }
+    .breadcrumb-custom .active { color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="header-top">
+        <h2>
+            <i class="fas fa-prescription me-2"></i>
+            {% if is_create %}Nueva Receta{% else %}Editar Receta{% endif %}
+        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-custom">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}"><i class="fas fa-home me-1"></i>Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'recetas:list' %}"><i class="fas fa-list me-1"></i>Recetas</a></li>
+                <li class="breadcrumb-item active">{% if is_create %}Nueva{% else %}Editar{% endif %}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <form method="post" id="recetaForm" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <!-- Error Messages -->
+        {% if form.errors or formset.non_form_errors %}
+        <div class="alert-custom mb-4">
+            <div style="display: flex; gap: 1rem;">
+                <div style="flex-shrink: 0;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 1.5rem;"></i>
+                </div>
+                <div>
+                    <strong>Por favor corrige los siguientes errores:</strong>
+                    {% if form.errors %}
+                        <ul class="mb-2 mt-2" style="margin-left: 1.5rem;">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if formset.non_form_errors %}
+                        <ul class="mb-0" style="margin-left: 1.5rem;">
+                            {% for error in formset.non_form_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 1. Información Médica -->
+        <div class="form-card">
+            <div class="section-header">
+                <i class="fas fa-user-md"></i>
+                <h5>Información Médica</h5>
+            </div>
+            
+            <div class="form-group-row">
+                <div class="field-group">
+                    <label for="{{ form.Matricula_medico.id_for_label }}">
+                        <i class="fas fa-id-card me-1" style="color: #667eea;"></i>Matrícula del Médico
+                        <span style="color: #dc3545;">*</span>
+                    </label>
+                    {{ form.Matricula_medico }}
+                    {% if form.Matricula_medico.errors %}
+                        <small style="color: #dc3545;">{{ form.Matricula_medico.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="field-group">
+                    <label for="{{ form.fecha_emision.id_for_label }}">
+                        <i class="fas fa-calendar me-1" style="color: #667eea;"></i>Fecha de Emisión
+                        <span style="color: #dc3545;">*</span>
+                    </label>
+                    {{ form.fecha_emision }}
+                    {% if form.fecha_emision.errors %}
+                        <small style="color: #dc3545;">{{ form.fecha_emision.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Datos del Paciente -->
+        <div class="form-card">
+            <div class="section-header">
+                <i class="fas fa-user"></i>
+                <h5>Datos del Paciente</h5>
+            </div>
+            
+            <div class="field-group">
+                <label for="{{ form.cliente.id_for_label }}">
+                    <i class="fas fa-user-circle me-1" style="color: #667eea;"></i>Seleccionar Cliente
+                    <span style="color: #dc3545;">*</span>
+                </label>
+                {{ form.cliente }}
+                {% if form.cliente.errors %}
+                    <small style="color: #dc3545;">{{ form.cliente.errors.0 }}</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3. Datos del Empleado -->
+        <div class="form-card">
+            <div class="section-header">
+                <i class="fas fa-user-nurse"></i>
+                <h5>Empleado Registrador</h5>
+            </div>
+            
+            <div class="field-group">
+                <label for="{{ form.empleado.id_for_label }}">
+                    <i class="fas fa-stethoscope me-1" style="color: #667eea;"></i>Seleccionar Empleado
+                    <span style="color: #dc3545;">*</span>
+                </label>
+                {{ form.empleado }}
+                {% if form.empleado.errors %}
+                    <small style="color: #dc3545;">{{ form.empleado.errors.0 }}</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4. Medicamento Principal -->
+        <div class="form-card">
+            <div class="section-header">
+                <i class="fas fa-pills"></i>
+                <h5>Medicamento Principal</h5>
+            </div>
+            
+            <div class="form-group-row">
+                <div class="field-group" style="grid-column: span 2;">
+                    <label for="{{ form.Medicamento.id_for_label }}">
+                        <i class="fas fa-capsules me-1" style="color: #667eea;"></i>Nombre del Medicamento
+                        <span style="color: #dc3545;">*</span>
+                    </label>
+                    {{ form.Medicamento }}
+                    {% if form.Medicamento.errors %}
+                        <small style="color: #dc3545;">{{ form.Medicamento.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="field-group">
+                    <label for="{{ form.Cantidad.id_for_label }}">
+                        <i class="fas fa-cube me-1" style="color: #667eea;"></i>Cantidad
+                        <span style="color: #dc3545;">*</span>
+                    </label>
+                    {{ form.Cantidad }}
+                    {% if form.Cantidad.errors %}
+                        <small style="color: #dc3545;">{{ form.Cantidad.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Medicamentos Detallados -->
+        <div class="form-card">
+            <div class="section-header">
+                <i class="fas fa-list-check"></i>
+                <h5>Medicamentos Detallados</h5>
+            </div>
+
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                <i class="fas fa-info-circle me-1" style="color: #667eea;"></i>
+                Agrega los medicamentos con su dosificación, frecuencia y duración específicas.
+            </p>
+
+            {{ formset.management_form }}
+
+            <div id="formset-container">
+                {% for form_detalle in formset %}
+                <div class="medicine-row {% if form_detalle.instance.pk %}existing{% endif %}" data-form-index="{{ forloop.counter0 }}">
+                    <div class="medicine-number">{{ forloop.counter }}</div>
+
+                    <div class="form-group-row">
+                        <!-- Producto -->
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label for="{{ form_detalle.producto.id_for_label }}">
+                                <i class="fas fa-box me-1" style="color: #667eea;"></i>Medicamento
+                                {% if form_detalle.producto.field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                            </label>
+                            {{ form_detalle.producto }}
+                            {% if form_detalle.producto.errors %}
+                                <small style="color: #dc3545;">{{ form_detalle.producto.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Dosis -->
+                        <div class="field-group">
+                            <label for="{{ form_detalle.dosis.id_for_label }}">
+                                <i class="fas fa-weight me-1" style="color: #667eea;"></i>Dosis
+                                {% if form_detalle.dosis.field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                            </label>
+                            {{ form_detalle.dosis }}
+                            {% if form_detalle.dosis.errors %}
+                                <small style="color: #dc3545;">{{ form_detalle.dosis.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Frecuencia -->
+                        <div class="field-group">
+                            <label for="{{ form_detalle.frecuencia.id_for_label }}">
+                                <i class="fas fa-clock me-1" style="color: #667eea;"></i>Frecuencia
+                                {% if form_detalle.frecuencia.field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                            </label>
+                            {{ form_detalle.frecuencia }}
+                            {% if form_detalle.frecuencia.errors %}
+                                <small style="color: #dc3545;">{{ form_detalle.frecuencia.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Duración -->
+                        <div class="field-group">
+                            <label for="{{ form_detalle.duracion.id_for_label }}">
+                                <i class="fas fa-hourglass-end me-1" style="color: #667eea;"></i>Duración
+                                {% if form_detalle.duracion.field.required %}<span style="color: #dc3545;">*</span>{% endif %}
+                            </label>
+                            {{ form_detalle.duracion }}
+                            {% if form_detalle.duracion.errors %}
+                                <small style="color: #dc3545;">{{ form_detalle.duracion.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Instrucciones -->
+                        <div class="field-group" style="grid-column: span 4;">
+                            <label for="{{ form_detalle.instrucciones.id_for_label }}">
+                                <i class="fas fa-sticky-note me-1" style="color: #667eea;"></i>Instrucciones
+                            </label>
+                            {{ form_detalle.instrucciones }}
+                            {% if form_detalle.instrucciones.errors %}
+                                <small style="color: #dc3545;">{{ form_detalle.instrucciones.errors.0 }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Delete Checkbox -->
+                        {% if form_detalle.DELETE %}
+                        <div class="field-group" style="grid-column: span 4; margin-top: 0.5rem;">
+                            <label class="delete-checkbox-wrapper" for="{{ form_detalle.DELETE.id_for_label }}" style="margin: 0;">
+                                {{ form_detalle.DELETE }}
+                                <i class="fas fa-trash me-1"></i>Eliminar este medicamento
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- Hidden template for new empty form (used by JS cloning) -->
+                <div class="medicine-row empty-form" data-form-index="__prefix__">
+                    <div class="medicine-number">0</div>
+
+                    <div class="form-group-row">
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label>
+                                <i class="fas fa-box me-1" style="color: #667eea;"></i>Medicamento
+                            </label>
+                            {{ formset.empty_form.producto }}
+                        </div>
+
+                        <div class="field-group">
+                            <label>
+                                <i class="fas fa-weight me-1" style="color: #667eea;"></i>Dosis
+                            </label>
+                            {{ formset.empty_form.dosis }}
+                        </div>
+
+                        <div class="field-group">
+                            <label>
+                                <i class="fas fa-clock me-1" style="color: #667eea;"></i>Frecuencia
+                            </label>
+                            {{ formset.empty_form.frecuencia }}
+                        </div>
+
+                        <div class="field-group">
+                            <label>
+                                <i class="fas fa-hourglass-end me-1" style="color: #667eea;"></i>Duración
+                            </label>
+                            {{ formset.empty_form.duracion }}
+                        </div>
+
+                        <div class="field-group" style="grid-column: span 4;">
+                            <label>
+                                <i class="fas fa-sticky-note me-1" style="color: #667eea;"></i>Instrucciones
+                            </label>
+                            {{ formset.empty_form.instrucciones }}
+                        </div>
+
+                        {% if formset.empty_form.DELETE %}
+                        <div class="field-group" style="grid-column: span 4; margin-top: 0.5rem;">
+                            <label class="delete-checkbox-wrapper" style="margin: 0;">
+                                {{ formset.empty_form.DELETE }}
+                                <i class="fas fa-trash me-1"></i>Eliminar este medicamento
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add More Button -->
+            <button type="button" id="add-form" class="btn-add-medicine mt-3">
+                <i class="fas fa-plus me-2"></i>Agregar otro medicamento
+            </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-group-action">
+            <a href="{% url 'recetas:list' %}" class="btn-secondary-custom" style="text-decoration: none; display:flex; align-items:center;">
+                <i class="fas fa-times me-2"></i>Cancelar
+            </a>
+            <button type="submit" class="btn-primary-custom">
+                <i class="fas fa-save me-2"></i>Guardar Receta
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Choices.js
+    const selectElements = document.querySelectorAll('select:not([data-form-prefixed-id])');
+    selectElements.forEach(select => {
+        new Choices(select, {
+            searchEnabled: true,
+            itemSelectText: '',
+            placeholder: true,
+            placeholderValue: 'Seleccione una opción',
+            removeItemButton: true,
+        });
+    });
+
+    // Formset management
+    const addFormBtn = document.getElementById('add-form');
+    const formsetContainer = document.getElementById('formset-container');
+    const totalFormsInput = document.querySelector('input[name="detalles-TOTAL_FORMS"]');
+    const emptyFormTemplate = formsetContainer.querySelector('.medicine-row.empty-form');
+
+    let formCount = parseInt(totalFormsInput.value);
+
+    // Add new form
+    addFormBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        if (emptyFormTemplate) {
+            const newForm = emptyFormTemplate.cloneNode(true);
+            newForm.classList.remove('empty-form');
+            newForm.setAttribute('data-form-index', formCount);
+
+            const medicineNumber = newForm.querySelector('.medicine-number');
+            medicineNumber.textContent = formCount + 1;
+
+            newForm.querySelectorAll('input, select, textarea').forEach(field => {
+                field.value = '';
+                const name = field.name.replace(/__prefix__/, formCount);
+                const id = field.id.replace(/__prefix__/, formCount);
+                field.name = name;
+                field.id = id;
+                field.removeAttribute('data-form-prefixed-id');
+
+                if (field.tagName === 'SELECT') {
+                    setTimeout(() => {
+                        new Choices(field, {
+                            searchEnabled: true,
+                            itemSelectText: '',
+                            placeholder: true,
+                            placeholderValue: 'Seleccione una opción',
+                            removeItemButton: true,
+                        });
+                    }, 0);
+                }
+            });
+
+            formsetContainer.appendChild(newForm);
+            totalFormsInput.value = parseInt(totalFormsInput.value) + 1;
+            formCount++;
+        }
+    });
+
+    // Handle delete checkbox
+    document.addEventListener('change', function(e) {
+        if (e.target.name && e.target.name.includes('-DELETE')) {
+            const row = e.target.closest('.medicine-row');
+            if (e.target.checked) {
+                row.classList.add('deleted');
+            } else {
+                row.classList.remove('deleted');
+            }
+        }
+    });
+
+    // Set today's date as default
+    const dateInput = document.querySelector('input[type="date"]');
+    if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+
+    // Form validation
+    const form = document.getElementById('recetaForm');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

@@ -14,9 +14,40 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
+from django.urls import path, include
+from django.views.generic import TemplateView
 from django.urls import path
+from . import views
+from django.conf.urls.static import static
 
+
+app_name = "core"
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Pagina principal (home)
+    path('', TemplateView.as_view(template_name="home.html"), name="home"),
+
+    # Apps del proyecto
+    path('empleados/',include("empleados.urls")),
+    path('usuario/', include("usuario.urls")),
+    path('clientes/', include("clientes.urls")),
+    path('productos/', include("productos.urls")),
+    path('recetas/', include("recetas.urls")),
+    path('farmacia/',include("farmacia.urls")),
+    path("dashboard/", views.dashboard, name="dashboard"),
+    path("dashboard/export/excel/", views.export_dashboard_excel, name="export_excel"),
+    path("dashboard/export/pdf/", views.export_dashboard_pdf, name="export_pdf"),
+    path('inventario/api/actualizar_stock/', include('inventario.urls')),  # ya definiste la ruta
+    path('ventas/', include('ventas.urls')),
+    path('reportes/', include('reportes.urls')),
+    path('alertas/cron/', include('alertas.urls')),  # opcional
+
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+
+
+
+

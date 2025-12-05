@@ -1,0 +1,328 @@
+﻿{% extends 'base.html' %}
+{% block title %}Listado de Ventas{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-shopping-cart text-success me-2"></i>Ventas
+            </h2>
+            <p class="text-muted mt-2 mb-0">Registro y gestión de ventas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'ventas:venta_pos' %}" class="btn btn-primary">
+                <i class="fas fa-cash-register me-2"></i>POS
+            </a>
+            <a href="{% url 'ventas:venta_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nueva Venta
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="reportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-file-alt me-2"></i>Reportes
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line me-2"></i>Ventas del día</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-chart-bar me-2"></i>Ventas semanales</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Exportar Excel</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>Exportar PDF</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-success bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Ventas del día</h6>
+                    <h3 class="card-title mb-0">Bs {{ ventas_dia|default:"0.00" }}</h3>
+                    <small>{% now "j F, Y" %}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Total ventas</h6>
+                    <h3 class="card-title mb-0">{{ total_ventas|default:"0" }}</h3>
+                    <small>Transacciones</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning bg-gradient text-dark">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Ticket promedio</h6>
+                    <h3 class="card-title mb-0">Bs {{ ticket_promedio|default:"0.00" }}</h3>
+                    <small>Por venta</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-danger bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Ventas pendientes</h6>
+                    <h3 class="card-title mb-0">{{ ventas_pendientes|default:"0" }}</h3>
+                    <small>Por procesar</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" placeholder="Buscar venta..." id="searchSale">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        {% for estado_valor, estado_nombre in estados %}
+                            <option value="{{ estado_valor }}" {% if request.GET.estado == estado_valor %}selected{% endif %}>
+                                {{ estado_nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ request.GET.fecha_inicio }}" placeholder="Fecha inicio">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ request.GET.fecha_fin }}" placeholder="Fecha fin">
+                </div>
+                <div class="col-md-2">
+                    <select name="sucursal" class="form-select">
+                        <option value="">Todas las sucursales</option>
+                        {% for s in sucursales %}
+                            <option value="{{ s.id_sucursal }}" {% if request.GET.sucursal == s.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                                {{ s.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Aplicar filtros
+                        </button>
+                        <a href="{% url 'ventas:venta_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Empleado</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in ventas %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">#{{ v.id }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-circle fa-2x text-muted me-2"></i>
+                                <div>
+                                    <div>{{ v.cliente }}</div>
+                                    <small class="text-muted">CI: {{ v.cliente.ci }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-tie fa-2x text-muted me-2"></i>
+                                {{ v.empleado }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold">Bs {{ v.total|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            {% if v.estado == 'pagado' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>pagado
+                                </span>
+                            {% elif v.estado == 'pendiente' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>Cancelada
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-muted">
+                                <i class="far fa-calendar me-1"></i>
+                                {{ v.fecha|date:"d/m/Y" }}
+                                <br>
+                                <small>
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ v.fecha|date:"H:i" }}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'ventas:venta_detalle' v.id_venta %}">
+                                            <i class="fas fa-eye me-2 text-primary"></i>Ver detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'ventas:venta_validar' v.id_venta %}">
+                                            <i class="fas fa-file-invoice me-2 text-info"></i>Ver factura
+                                        </a>
+                                    </li>
+                                    
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'ventas:venta_update' v.id_venta %}">
+                                            <i class="fas fa-edit me-2 text-warning"></i>Editar
+                                        </a>
+                                    </li>
+                                    
+                                    <li><hr class="dropdown-divider"></li>
+                                   
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'ventas:venta_delete' v.id_venta %}">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                    
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                                <p>No hay ventas registradas.</p>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'ventas:venta_pos' %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-cash-register me-2"></i>Ir al POS
+                                    </a>
+                                    <a href="{% url 'ventas:venta_create' %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus me-2"></i>Nueva venta
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.order_by %}&order_by={{ request.GET.order_by }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in ventas.paginator.page_range %}
+                {% if ventas.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if ventas.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ ventas.next_page_number }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchSale');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+
+    // Filtro por estado
+    const statusFilter = document.getElementById('filterStatus');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            const selectedStatus = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            if (!selectedStatus) {
+                rows.forEach(row => row.style.display = '');
+                return;
+            }
+            
+            rows.forEach(row => {
+                const statusCell = row.querySelector('td:nth-child(5)');
+                if (statusCell) {
+                    const status = statusCell.textContent.toLowerCase();
+                    row.style.display = status.includes(selectedStatus) ? '' : 'none';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}

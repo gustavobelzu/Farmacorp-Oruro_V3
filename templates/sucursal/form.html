@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Sucursal{% endblock %}
+
+{% block extrahead %}
+<link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                {% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Sucursal
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'farmacia:listf' %}">Sucursales</a></li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Nueva{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" id="sucursalForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Por favor corrige los siguientes errores:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <!-- Nombre -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.nombre }}
+                            <label for="{{ form.nombre.id_for_label }}">
+                                <i class="fas fa-store me-2"></i>Nombre de la Sucursal
+                            </label>
+                        </div>
+                        {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nombre.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Farmacia -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.farmacia }}
+                            <label for="{{ form.farmacia.id_for_label }}">
+                                <i class="fas fa-clinic-medical me-2"></i>Farmacia
+                            </label>
+                        </div>
+                        {% if form.farmacia.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.farmacia.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Departamento -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.departamento }}
+                            <label for="{{ form.departamento.id_for_label }}">
+                                <i class="fas fa-map-marked-alt me-2"></i>Departamento
+                            </label>
+                        </div>
+                        {% if form.departamento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.departamento.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- NIT -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.nit }}
+                            <label for="{{ form.nit.id_for_label }}">
+                                <i class="fas fa-hashtag me-2"></i>NIT
+                            </label>
+                        </div>
+                        {% if form.nit.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nit.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.email }}
+                            <label for="{{ form.email.id_for_label }}">
+                                <i class="fas fa-envelope me-2"></i>Correo Electrónico
+                            </label>
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Horario -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.horario }}
+                            <label for="{{ form.horario.id_for_label }}">
+                                <i class="fas fa-clock me-2"></i>Horario de Atención
+                            </label>
+                        </div>
+                        {% if form.horario.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.horario.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="col-12">
+                        <div class="form-floating">
+                            {{ form.direccion }}
+                            <label for="{{ form.direccion.id_for_label }}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Dirección
+                            </label>
+                        </div>
+                        {% if form.direccion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.direccion.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Additional Information Card -->
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>Información Importante
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>La información de la sucursal será visible para clientes y empleados.</li>
+                                    <li>El NIT debe ser único y válido para operaciones comerciales.</li>
+                                    <li>El horario debe especificar los días y horas de atención.</li>
+                                    <li>La dirección debe ser precisa para la ubicación en el mapa.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'farmacia:listf' %}" class="btn btn-light">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Choices.js for select elements
+    const departamentoSelect = new Choices('#{{ form.departamento.id_for_label }}', {
+        searchEnabled: true,
+        itemSelectText: '',
+        placeholder: true,
+        placeholderValue: 'Seleccione un departamento',
+    });
+
+    const farmaciaSelect = new Choices('#{{ form.farmacia.id_for_label }}', {
+        searchEnabled: true,
+        itemSelectText: '',
+        placeholder: true,
+        placeholderValue: 'Seleccione una farmacia',
+    });
+
+    // Format inputs
+    const textInputs = document.querySelectorAll('input[type="text"], input[type="email"]');
+    textInputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+
+    // Auto-format NIT
+    const nitInput = document.getElementById('{{ form.nit.id_for_label }}');
+    if (nitInput) {
+        nitInput.addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+        });
+    }
+
+    // Format email to lowercase
+    const emailInput = document.getElementById('{{ form.email.id_for_label }}');
+    if (emailInput) {
+        emailInput.addEventListener('input', function(e) {
+            this.value = this.value.toLowerCase();
+        });
+    }
+
+    // Form validation
+    const form = document.getElementById('sucursalForm');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

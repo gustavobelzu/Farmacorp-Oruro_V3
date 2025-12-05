@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Eliminar Producto{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-trash-alt text-danger me-2"></i>Eliminar Producto
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'productos:list' %}">Productos</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Alert Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger border-2 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-danger fa-4x"></i>
+                    </div>
+                    <h4 class="card-title mb-3">¿Estás seguro?</h4>
+                    <p class="card-text text-muted mb-4">
+                        Estás a punto de eliminar el producto: <br>
+                        <strong>{{ object.nombre }}</strong><br>
+                        Código: {{ object.codigo_barras }}<br>
+                        Esta acción no se puede deshacer.
+                    </p>
+
+                    <form method="post" class="d-flex gap-2 justify-content-center">
+                        {% csrf_token %}
+                        <a href="{% url 'productos:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i>Sí, Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if related_items %}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>Elementos relacionados
+                    </h5>
+                    <p class="card-text">Este producto está relacionado con:</p>
+                    <ul class="list-unstyled mb-0">
+                        {% if object.detalles_ventas.count > 0 %}
+                        <li class="mb-2">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            {{ object.detalles_ventas.count }} ventas registradas
+                        </li>
+                        {% endif %}
+                        {% if object.inventario_set.count > 0 %}
+                        <li class="mb-2">
+                            <i class="fas fa-box me-2"></i>
+                            {{ object.inventario_set.count }} registros de inventario
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

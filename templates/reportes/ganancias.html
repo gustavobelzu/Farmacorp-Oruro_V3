@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Reporte de Ganancias{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-graph-up-arrow"></i> Reporte de Ganancias
+        </h2>
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <div>
+                <label for="fecha_inicio" class="form-label">Desde:</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ filtros.fecha_inicio|date:'Y-m-d' }}" class="form-control form-control-sm">
+            </div>
+            <div>
+                <label for="fecha_fin" class="form-label">Hasta:</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" value="{{ filtros.fecha_fin|date:'Y-m-d' }}" class="form-control form-control-sm">
+            </div>
+            <div>
+                <label for="sucursal" class="form-label">Sucursal:</label>
+                <select name="sucursal" id="sucursal" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for s in sucursales %}
+                        <option value="{{ s.id_sucursal }}" {% if filtros.sucursal_id == s.id_sucursal|stringformat:"s" %}selected{% endif %}>
+                            {{ s.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary mt-4">
+                <i class="bi bi-search"></i> Filtrar
+            </button>
+        </form>
+    </div>
+
+    <!-- =========================== -->
+    <!-- Métricas principales -->
+    <!-- =========================== -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-start border-success shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Ingresos Totales</h6>
+                    <h4 class="fw-bold text-success">Bs {{ metricas.total_ingresos|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-info shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Ganancia Neta</h6>
+                    <h4 class="fw-bold text-info">Bs {{ metricas.ganancia_neta|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-warning shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Margen Promedio</h6>
+                    <h4 class="fw-bold text-warning">{{ metricas.margen_promedio|floatformat:2 }}%</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-secondary shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Productos Vendidos</h6>
+                    <h4 class="fw-bold text-secondary">{{ metricas.productos_total }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================== -->
+    <!-- Gráfico de ganancias -->
+    <!-- =========================== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light fw-bold">
+            <i class="bi bi-bar-chart-fill"></i> Ganancia por Producto
+        </div>
+        <div class="card-body">
+            <canvas id="graficoGanancias" height="120"></canvas>
+        </div>
+    </div>
+
+    <!-- =========================== -->
+    <!-- Tabla de productos -->
+    <!-- =========================== -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light fw-bold">
+            <i class="bi bi-box-seam"></i> Detalle de Productos
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th>Código</th>
+                        <th>Cantidad Vendida</th>
+                        <th>Ingreso Total (Bs)</th>
+                        <th>Ganancia (Bs)</th>
+                        <th>Margen (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in productos %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ p.producto__nombre }}</td>
+                        <td>{{ p.producto__codigo_barras }}</td>
+                        <td>{{ p.cantidad_total }}</td>
+                        <td>Bs {{ p.ingreso|floatformat:2 }}</td>
+                        <td>Bs {{ p.ganancia|floatformat:2 }}</td>
+                        <td>
+                            {{ p.margen_pct|floatformat:2 }}%
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No hay datos en este rango.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Extraer datos de la tabla
+        const labels = [];
+        const values = [];
+        
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 6) {
+                // Columna 1: nombre del producto
+                const nombre = cells[1].textContent.trim();
+                // Columna 5: ganancia
+                const ganancia = parseFloat(cells[5].textContent.replace('Bs ', '').trim());
+                
+                if (nombre && !isNaN(ganancia)) {
+                    labels.push(nombre);
+                    values.push(ganancia);
+                }
+            }
+        });
+        
+        // Si hay datos, crear el gráfico
+        if (labels.length > 0) {
+            const canvas = document.getElementById('graficoGanancias');
+            const ctx = canvas.getContext('2d');
+            
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ganancia (Bs)',
+                        data: values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#555' }
+                        },
+                        x: {
+                            ticks: { color: '#555' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Bs ' + context.formattedValue;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar el gráfico:', error);
+    }
+});
+</script>
+{% endblock %}

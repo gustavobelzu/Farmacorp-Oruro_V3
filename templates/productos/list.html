@@ -1,0 +1,541 @@
+﻿{% extends "base.html" %}
+{% block title %}Productos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-box-open text-success me-2"></i>Productos
+            </h2>
+            <p class="text-muted mt-2 mb-0">Gestión del catálogo de productos</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'productos:producto_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nuevo Producto
+            </a>
+            <button class="btn btn-outline-primary" id="scanBarcode">
+                <i class="fas fa-barcode me-2"></i>Escanear
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-2"></i>Exportar
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Excel</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>PDF</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Imprimir etiquetas</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Total Productos</h6>
+                            <h3 class="card-title mb-0">{{ total_productos|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-success-light rounded-circle p-3">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="progress bg-success-light mt-3" style="height: 5px;">
+                        <div class="progress-bar bg-white" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Stock Bajo</h6>
+                            <h3 class="card-title mb-0">{{ productos_stock_bajo|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-warning-light rounded-circle p-3">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="progress bg-warning-light mt-3" style="height: 5px;">
+                        <div class="progress-bar bg-dark" style="width: 35%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Por Vencer</h6>
+                            <h3 class="card-title mb-0">{{ productos_por_vencer|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-danger-light rounded-circle p-3">
+                            <i class="fas fa-calendar-times fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="progress bg-danger-light mt-3" style="height: 5px;">
+                        <div class="progress-bar bg-white" style="width: 65%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Valor Total</h6>
+                            <h3 class="card-title mb-0">Bs {{ valor_total|default:"0"|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-info-light rounded-circle p-3">
+                            <i class="fas fa-cash-register fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="progress bg-info-light mt-3" style="height: 5px;">
+                        <div class="progress-bar bg-white" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="Buscar producto..." id="searchProduct">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterCategoria">
+                        <option value="">Categoría</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="cosmeticos">Cosméticos</option>
+                        <option value="cuidado">Cuidado Personal</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterStock">
+                        <option value="">Estado de stock</option>
+                        <option value="low">Stock bajo</option>
+                        <option value="ok">Stock normal</option>
+                        <option value="high">Stock alto</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterVencimiento">
+                        <option value="">Vencimiento</option>
+                        <option value="1month">Próximo mes</option>
+                        <option value="3months">Próximos 3 meses</option>
+                        <option value="6months">Próximos 6 meses</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterProveedor">
+                        <option value="">Proveedor</option>
+                        {% for proveedor in proveedores %}
+                        <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary w-100" id="applyFilters">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Active Filters -->
+            <div class="mt-3" id="activeFilters" style="display: none;">
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-light text-dark">
+                        Categoría: Medicamentos
+                        <i class="fas fa-times ms-2 cursor-pointer"></i>
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        Stock: Bajo
+                        <i class="fas fa-times ms-2 cursor-pointer"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Options -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="tableView">
+                <i class="fas fa-table me-2"></i>Tabla
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="gridView">
+                <i class="fas fa-th-large me-2"></i>Cuadrícula
+            </button>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-muted small">
+                Mostrando <span class="fw-bold">{{ productos.start_index }}</span> - 
+                <span class="fw-bold">{{ productos.end_index }}</span> de 
+                <span class="fw-bold">{{ productos.paginator.count }}</span> productos
+            </div>
+            <select class="form-select form-select-sm w-auto" id="itemsPerPage">
+                <option value="10">10 por página</option>
+                <option value="25">25 por página</option>
+                <option value="50">50 por página</option>
+                <option value="100">100 por página</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th scope="col">Código</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Descripción</th>
+                        <th scope="col">Precio (Bs)</th>
+                        <th scope="col">Stock</th>
+                        <th scope="col">Vencimiento</th>
+                        <th scope="col">Proveedor</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="{{ producto.codigo_barras }}">
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ producto.codigo_barras }}</span>
+                        </td>
+                        <td>{{ producto.nombre }}</td>
+                        <td>
+                            <small class="text-muted">{{ producto.descripcion|truncatechars:50 }}</small>
+                        </td>
+                        <td>
+                            <span class="fw-bold">Bs {{ producto.precio_unitario|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            {% if producto.stock < 10 %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>{{ producto.stock }}
+                                </span>
+                            {% elif producto.stock < 20 %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ producto.stock }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>{{ producto.stock }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if producto.fecha_vencimiento %}
+                                <span class="badge {% if producto.fecha_vencimiento|date:'Y-m-d' < now|date:'Y-m-d' %}bg-danger{% else %}bg-info{% endif %}">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ producto.fecha_vencimiento|date:"d/m/Y" }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">No aplica</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-nowrap">
+                                <i class="fas fa-building me-1 text-muted"></i>
+                                {{ producto.proveedor.nombre }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'productos:detalle' producto.codigo_barras %}">
+                                            <i class="fas fa-eye me-2 text-primary"></i>Ver detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'productos:editar' producto.codigo_barras %}">
+                                            <i class="fas fa-edit me-2 text-warning"></i>Editar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'productos:eliminar' producto.codigo_barras %}">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-box fa-3x mb-3"></i>
+                                <p>No hay productos registrados.</p>
+                                <a href="{% url 'productos:producto_create' %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus me-2"></i>Agregar producto
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if productos.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if productos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ productos.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+            
+            {% for num in productos.paginator.page_range %}
+                {% if productos.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if productos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ productos.next_page_number }}">Siguiente</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchProduct');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+                updateActiveFilters();
+            }, 300);
+        });
+    }
+
+    // Seleccionar todos los checkboxes
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('tbody .form-check-input');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+
+    // Contador de seleccionados
+    function updateSelectedCount() {
+        const selectedCount = document.querySelectorAll('tbody .form-check-input:checked').length;
+        const actionsButton = document.getElementById('bulkActions');
+        if (selectedCount > 0) {
+            actionsButton.textContent = `Acciones (${selectedCount})`;
+            actionsButton.disabled = false;
+        } else {
+            actionsButton.textContent = 'Acciones';
+            actionsButton.disabled = true;
+        }
+    }
+
+    // Filtros activos
+    function updateActiveFilters() {
+        const activeFilters = document.getElementById('activeFilters');
+        const filters = [];
+        
+        // Recoger filtros activos
+        const categoria = document.getElementById('filterCategoria').value;
+        const stock = document.getElementById('filterStock').value;
+        const vencimiento = document.getElementById('filterVencimiento').value;
+        const proveedor = document.getElementById('filterProveedor').value;
+        const search = document.getElementById('searchProduct').value;
+
+        if (categoria) filters.push(['Categoría', categoria]);
+        if (stock) filters.push(['Stock', stock]);
+        if (vencimiento) filters.push(['Vencimiento', vencimiento]);
+        if (proveedor) filters.push(['Proveedor', proveedor]);
+        if (search) filters.push(['Búsqueda', search]);
+
+        // Mostrar/ocultar contenedor
+        if (filters.length > 0) {
+            activeFilters.style.display = 'block';
+            activeFilters.innerHTML = filters.map(([label, value]) => `
+                <span class="badge bg-light text-dark" data-filter="${label.toLowerCase()}">
+                    ${label}: ${value}
+                    <i class="fas fa-times ms-2 cursor-pointer"></i>
+                </span>
+            `).join('');
+        } else {
+            activeFilters.style.display = 'none';
+        }
+    }
+
+    // Vista en cuadrícula/tabla
+    const tableView = document.getElementById('tableView');
+    const gridView = document.getElementById('gridView');
+    const productsContainer = document.querySelector('.table-responsive').parentNode;
+
+    if (tableView && gridView) {
+        gridView.addEventListener('click', function() {
+            tableView.classList.remove('active');
+            gridView.classList.add('active');
+            productsContainer.classList.add('grid-view');
+        });
+
+        tableView.addEventListener('click', function() {
+            gridView.classList.remove('active');
+            tableView.classList.add('active');
+            productsContainer.classList.remove('grid-view');
+        });
+    }
+
+    // Escaneo de código de barras
+    const scanButton = document.getElementById('scanBarcode');
+    if (scanButton) {
+        scanButton.addEventListener('click', function() {
+            // Aquí iría la lógica de escaneo
+            // Por ahora solo mostramos un modal de ejemplo
+            const modal = new bootstrap.Modal(document.getElementById('scannerModal'));
+            modal.show();
+        });
+    }
+
+    // Aplicar filtros
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        updateActiveFilters();
+        // Aquí iría la lógica de filtrado real con AJAX
+    });
+
+    // Eliminar filtros
+    document.getElementById('activeFilters').addEventListener('click', function(e) {
+        if (e.target.classList.contains('fa-times')) {
+            const badge = e.target.closest('.badge');
+            const filterType = badge.dataset.filter;
+            document.getElementById(`filter${filterType.charAt(0).toUpperCase() + filterType.slice(1)}`).value = '';
+            badge.remove();
+            if (!this.hasChildNodes()) {
+                this.style.display = 'none';
+            }
+            // Aquí iría la lógica de actualización de resultados
+        }
+    });
+
+    // Cambio de items por página
+    document.getElementById('itemsPerPage').addEventListener('change', function() {
+        // Aquí iría la lógica para cambiar items por página
+        // Probablemente un submit del form o llamada AJAX
+    });
+});
+</script>
+
+<!-- Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Escanear Código de Barras</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4" id="scanner-placeholder" style="height: 200px; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-barcode fa-3x text-muted"></i>
+                </div>
+                <p class="text-muted">Coloque el código de barras frente a la cámara</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Escanear manualmente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Styles -->
+<style>
+.grid-view .table {
+    display: none;
+}
+.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+.grid-view .product-card {
+    display: block !important;
+}
+.product-card {
+    display: none;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.bg-success-light {
+    background-color: rgba(255,255,255,0.2);
+}
+.bg-warning-light {
+    background-color: rgba(255,255,255,0.2);
+}
+.bg-danger-light {
+    background-color: rgba(255,255,255,0.2);
+}
+.bg-info-light {
+    background-color: rgba(255,255,255,0.2);
+}
+</style>
+{% endblock %}
+
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bienvenido{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero min-vh-100 d-flex align-items-center justify-content-center text-white position-relative overflow-hidden">
+    <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, var(--verde-principal) 0%, var(--verde-oscuro) 100%); pointer-events: none; z-index: 0;"></div>
+    <div class="container position-relative" style="z-index: 1;">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <img src="{% static 'img/farmacorp_logo.png' %}" alt="Farmacorp Logo" width="200" class="mb-4 animate__animated animate__fadeIn">
+                <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInUp">Bienvenido al Sistema de Farmacorp</h1>
+                <p class="lead mb-5 animate__animated animate__fadeInUp animate__delay-1s">
+                    Gestión integral y eficiente de farmacias, inventario, ventas y más.
+                </p>
+                <div class="d-flex justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-2s">
+                    <a href="{% url 'usuario:login' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                    </a>
+                    <a href="#features" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-info-circle me-2"></i>Conoce Más
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Decorative shapes -->
+    <div class="position-absolute bottom-0 start-0 w-100">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="#ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">
+            <span class="border-bottom border-success border-3 pb-2">¿Qué puedes hacer con Farmacorp?</span>
+        </h2>
+        <div class="row g-4">
+            <!-- Ventas -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-success bg-gradient text-white rounded-circle p-3 mb-4 mx-auto" style="width: 64px; height: 64px;">
+                            <i class="fas fa-cash-register fa-2x"></i>
+                        </div>
+                        <h5 class="card-title mb-3">Ventas</h5>
+                        <p class="card-text text-muted">
+                            Gestiona ventas de forma rápida y segura, con facturación automática y seguimiento en tiempo real.
+                        </p>
+                        <ul class="list-unstyled mt-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Punto de venta intuitivo</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Facturación automática</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Control de pagos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventario -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-warning bg-gradient text-white rounded-circle p-3 mb-4 mx-auto" style="width: 64px; height: 64px;">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                        <h5 class="card-title mb-3">Inventario</h5>
+                        <p class="card-text text-muted">
+                            Control total del stock en todas las sucursales, con alertas automáticas y gestión de vencimientos.
+                        </p>
+                        <ul class="list-unstyled mt-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Control de stock</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Alertas de vencimiento</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Transferencias entre sucursales</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reportes -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon bg-info bg-gradient text-white rounded-circle p-3 mb-4 mx-auto" style="width: 64px; height: 64px;">
+                            <i class="fas fa-chart-bar fa-2x"></i>
+                        </div>
+                        <h5 class="card-title mb-3">Reportes</h5>
+                        <p class="card-text text-muted">
+                            Análisis detallado y reportes personalizados para una mejor toma de decisiones.
+                        </p>
+                        <ul class="list-unstyled mt-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Reportes en tiempo real</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Exportación a Excel/PDF</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Gráficos interactivos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-store fa-3x text-success mb-3"></i>
+                    <h3 class="counter">50+</h3>
+                    <p class="text-muted">Sucursales</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h3 class="counter">1000+</h3>
+                    <p class="text-muted">Clientes</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-pills fa-3x text-warning mb-3"></i>
+                    <h3 class="counter">5000+</h3>
+                    <p class="text-muted">Productos</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card p-3">
+                    <i class="fas fa-chart-line fa-3x text-danger mb-3"></i>
+                    <h3 class="counter">99.9%</h3>
+                    <p class="text-muted">Disponibilidad</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="mb-4">¿Listo para comenzar?</h2>
+                <p class="lead text-muted mb-4">
+                    Únete a la red de farmacias más grande de Bolivia y lleva tu negocio al siguiente nivel.
+                </p>
+                <a href="{% url 'usuario:login' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Comenzar Ahora
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animación de contadores
+    const counters = document.querySelectorAll('.counter');
+    const speed = 200;
+
+    counters.forEach(counter => {
+        const animate = () => {
+            const value = +counter.innerText.replace(/[^\d]/g, '');
+            const data = +counter.getAttribute('data-target');
+            const time = value / speed;
+            if (value < data) {
+                counter.innerText = Math.ceil(value + time);
+                setTimeout(animate, 1);
+            } else {
+                counter.innerText = counter.getAttribute('data-text');
+            }
+        }
+        counter.setAttribute('data-target', counter.innerText.replace(/[^\d]/g, ''));
+        counter.setAttribute('data-text', counter.innerText);
+        counter.innerText = '0';
+        animate();
+    });
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

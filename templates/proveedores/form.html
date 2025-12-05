@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Proveedor{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                {% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Proveedor
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'productos:listp' %}">Proveedores</a></li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" id="proveedorForm" novalidate>
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Por favor corrige los siguientes errores:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <!-- Nombre del Proveedor -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.nombre }}
+                            <label for="{{ form.nombre.id_for_label }}">
+                                <i class="fas fa-building me-2"></i>Nombre del Proveedor
+                            </label>
+                        </div>
+                        {% if form.nombre.help_text %}
+                            <div class="form-text">{{ form.nombre.help_text }}</div>
+                        {% endif %}
+                        {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">{{ form.nombre.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.email }}
+                            <label for="{{ form.email.id_for_label }}">
+                                <i class="fas fa-envelope me-2"></i>Correo Electrónico
+                            </label>
+                        </div>
+                        {% if form.email.help_text %}
+                            <div class="form-text">{{ form.email.help_text }}</div>
+                        {% endif %}
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">{{ form.email.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.telefono }}
+                            <label for="{{ form.telefono.id_for_label }}">
+                                <i class="fas fa-phone me-2"></i>Teléfono
+                            </label>
+                        </div>
+                        {% if form.telefono.help_text %}
+                            <div class="form-text">{{ form.telefono.help_text }}</div>
+                        {% endif %}
+                        {% if form.telefono.errors %}
+                            <div class="invalid-feedback d-block">{{ form.telefono.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mt-3">
+                            {{ form.estado }}
+                            <label class="form-check-label" for="{{ form.estado.id_for_label }}">
+                                <i class="fas fa-toggle-on me-2"></i>Proveedor Activo
+                            </label>
+                        </div>
+                        {% if form.estado.help_text %}
+                            <div class="form-text">{{ form.estado.help_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="col-12">
+                        <div class="form-floating">
+                            {{ form.direccion }}
+                            <label for="{{ form.direccion.id_for_label }}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Dirección
+                            </label>
+                        </div>
+                        {% if form.direccion.help_text %}
+                            <div class="form-text">{{ form.direccion.help_text }}</div>
+                        {% endif %}
+                        {% if form.direccion.errors %}
+                            <div class="invalid-feedback d-block">{{ form.direccion.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'productos:listp' %}" class="btn btn-light">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('proveedorForm');
+    
+    // Form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Phone number mask
+    const phoneInput = document.getElementById('{{ form.telefono.id_for_label }}');
+    phoneInput.addEventListener('input', function(e) {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,4})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '+' + x[1] + x[2] + (x[3] ? x[3] : '');
+    });
+
+    // Name case conversion
+    const nameInput = document.getElementById('{{ form.nombre.id_for_label }}');
+    nameInput.addEventListener('blur', function(e) {
+        e.target.value = e.target.value
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

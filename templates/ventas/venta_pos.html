@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Punto de Venta</h2>
+<div class="alert alert-danger" id="errorAlert" style="display: none;"></div>
+<div class="alert alert-success" id="successAlert" style="display: none;"></div>
+
+<form id="posForm" method="post" action="{% url 'ventas:venta_create' %}" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label for="clienteInput">Cliente:</label>
+        <input type="text" id="clienteInput" name="cliente_manual" class="form-control" placeholder="CI del cliente" required>
+        <div class="invalid-feedback">Por favor ingrese el CI del cliente</div>
+    </div>
+    <ul id="sugerencias" role="listbox" class="list-group" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd;"></ul>
+    
+    <!-- Empleado - Solo lectura -->
+    <div class="form-group">
+        <label for="empleadoDisplay">Empleado:</label>
+        <input type="text" id="empleadoDisplay" class="form-control" value="{{ empleado_actual.nombre_completo }}" readonly>
+        <input type="hidden" name="empleado" value="{{ empleado_actual.ci }}">
+    </div>
+
+    <!-- Sucursal - Solo lectura -->
+    <div class="form-group">
+        <label for="sucursalDisplay">Sucursal:</label>
+        <input type="text" id="sucursalDisplay" class="form-control" value="{{ sucursal_actual.nombre }}" readonly>
+        <input type="hidden" name="sucursal" value="{{ sucursal_actual.id_sucursal }}">
+    </div>
+    <div class="table-responsive">
+        <table id="posTable" class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Desc %</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="product-row">
+                    <td>
+                        <select name="producto" class="form-control producto-select" required>
+                            <option value="">Seleccione un producto</option>
+                            {% for p in productos %}
+                            <option value="{{ p.codigo_barras }}" 
+                                    data-precio="{{ p.precio_unitario }}"
+                                    data-stock="{{ p.stock }}">
+                                {{ p.nombre }} (Stock: {{ p.stock }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" name="cantidad" class="form-control qty" value="1" min="1" required>
+                        <div class="invalid-feedback">Cantidad inválida</div>
+                    </td>
+                    <td><input type="text" class="form-control price" readonly></td>
+                    <td>
+                        <input type="number" name="descuento" class="form-control discount" value="0" min="0" max="100">
+                    </td>
+                    <td><span class="subtotal">0.00</span></td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-row">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <button type="button" id="addRow" class="btn btn-info mb-3">
+        <i class="fas fa-plus"></i> Agregar Producto
+    </button>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resumen de Venta</h5>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td>Subtotal:</td>
+                                <td class="text-end">Bs <span id="subtotalLabel">0.00</span></td>
+                            </tr>
+                            <tr>
+                                <td>Descuento Total:</td>
+                                <td class="text-end">Bs <span id="descuentoTotalLabel">0.00</span></td>
+                            </tr>
+                            <tr class="fw-bold border-top">
+                                <td>Total a Pagar:</td>
+                                <td class="text-end">Bs <span id="totalPagarLabel">0.00</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Método de Pago</h5>
+                    <select name="metodo_pago" class="form-select mb-3" required>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="qr">QR</option>
+                    </select>
+                    <div class="d-grid gap-2">
+                        <button type="button" id="verifyBtn" class="btn btn-primary">
+                            <i class="fas fa-calculator me-2"></i>Verificar Total
+                        </button>
+                        <button type="submit" id="submitBtn" class="btn btn-success" disabled>
+                            <i class="fas fa-cash-register me-2"></i>Completar Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+function showError(message) {
+    const alert = document.getElementById('errorAlert');
+    alert.textContent = message;
+    alert.style.display = 'block';
+    setTimeout(() => alert.style.display = 'none', 5000);
+}
+
+function showSuccess(message) {
+    const alert = document.getElementById('successAlert');
+    alert.textContent = message;
+    alert.style.display = 'block';
+    setTimeout(() => alert.style.display = 'none', 3000);
+}
+
+function calcularFila(row) {
+    let select = row.querySelector("select[name='producto']");
+    if (!select.value) return { subtotal: 0, descuento: 0 };
+    
+    let option = select.options[select.selectedIndex];
+    let price = Number(option.dataset.precio);
+    let stock = Number(option.dataset.stock);
+    let qty = Number(row.querySelector(".qty").value);
+    let discPercent = Number(row.querySelector(".discount").value);
+    
+    // Validación de stock
+    if (qty > stock) {
+        showError(`Stock insuficiente para ${option.text}. Stock disponible: ${stock}`);
+        row.querySelector(".qty").value = stock;
+        qty = stock;
+    }
+    
+    row.querySelector(".price").value = price.toFixed(2);
+    let subtotalSinDescuento = price * qty;
+    let montoDescuento = subtotalSinDescuento * (discPercent / 100);
+    let subtotal = subtotalSinDescuento - montoDescuento;
+    
+    row.querySelector(".subtotal").textContent = subtotal.toFixed(2);
+    
+    return { subtotal: subtotal, descuento: montoDescuento };
+}
+
+function recalcularTotal() {
+    let totalSubtotal = 0;
+    let totalDescuento = 0;
+    
+    document.querySelectorAll("#posTable tbody tr").forEach(r => {
+        const { subtotal, descuento } = calcularFila(r);
+        totalSubtotal += subtotal;
+        totalDescuento += descuento;
+    });
+    
+    let totalPagar = totalSubtotal;
+    
+    document.getElementById("subtotalLabel").textContent = (totalSubtotal + totalDescuento).toFixed(2);
+    document.getElementById("descuentoTotalLabel").textContent = totalDescuento.toFixed(2);
+    document.getElementById("totalPagarLabel").textContent = totalPagar.toFixed(2);
+}
+
+// Agregar nueva fila
+document.getElementById("addRow").addEventListener("click", function() {
+    const tbody = document.querySelector("#posTable tbody");
+    const newRow = tbody.firstElementChild.cloneNode(true);
+    
+    // Limpiar valores
+    newRow.querySelector("select").value = "";
+    newRow.querySelector(".qty").value = "1";
+    newRow.querySelector(".price").value = "";
+    newRow.querySelector(".discount").value = "0";
+    newRow.querySelector(".subtotal").textContent = "0.00";
+    
+    // Agregar eventos
+    addRowEvents(newRow);
+    tbody.appendChild(newRow);
+});
+
+// Eliminar fila
+function addRowEvents(row) {
+    row.querySelector(".remove-row").addEventListener("click", function() {
+        if (document.querySelectorAll("#posTable tbody tr").length > 1) {
+            row.remove();
+            recalcularTotal();
+        }
+    });
+    
+    row.querySelectorAll("input, select").forEach(el => {
+        el.addEventListener("input", recalcularTotal);
+    });
+}
+
+// Agregar eventos a la primera fila
+document.querySelectorAll("#posTable tbody tr").forEach(addRowEvents);
+recalcularTotal();
+
+// Validación del formulario
+document.getElementById("posForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    if (!this.checkValidity()) {
+        e.stopPropagation();
+        this.classList.add('was-validated');
+        return;
+    }
+    
+    // Continuar con el envío si es válido
+    if (document.getElementById("submitBtn").disabled) {
+        showError("Por favor, verifique el total antes de continuar");
+        return;
+    }
+    this.submit();
+});
+
+document.getElementById("verifyBtn").addEventListener("click", async () => {
+    try {
+        let items = [];
+        document.querySelectorAll("#posTable tbody tr").forEach(r => {
+            const select = r.querySelector("select");
+            if (select.value) { // Solo incluir filas con productos seleccionados
+                items.push({
+                    codigo: select.value,
+                    cantidad: r.querySelector(".qty").value,
+                    descuento: r.querySelector(".discount").value
+                });
+            }
+        });
+        
+        if (items.length === 0) {
+            showError("Agregue al menos un producto a la venta");
+            return;
+        }
+
+        const resp = await fetch("{% url 'ventas:api_verificar_total' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({items: items})
+        });
+
+        if (!resp.ok) throw new Error('Error al verificar el total');
+        
+        const data = await resp.json();
+        let totalCliente = parseFloat(document.getElementById("totalPagarLabel").textContent);
+        let totalServer = parseFloat(data.total);
+        
+        if (data.ok && Math.abs(totalCliente - totalServer) < 0.01) {
+            showSuccess("Totales correctos. Puede proceder con el pago.");
+            document.getElementById("submitBtn").disabled = false;
+        } else {
+            showError("Diferencia detectada en los totales. Se ha actualizado al valor correcto.");
+            document.getElementById("totalPagarLabel").textContent = totalServer.toFixed(2);
+        }
+    } catch (error) {
+        showError("Error al verificar el total: " + error.message);
+    }
+});
+
+// Búsqueda de clientes con sugerencias
+document.getElementById("clienteInput").addEventListener("input", function() {
+    const query = this.value;
+    const lista = document.getElementById("sugerencias");
+    
+    if (query.length < 2) {
+        lista.innerHTML = "";
+        return;
+    }
+
+    fetch(`/clientes/buscar/?q=${encodeURIComponent(query)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la búsqueda de clientes');
+            }
+            return response.json();
+        })
+        .then(data => {
+            lista.innerHTML = "";
+            if (data.length === 0) {
+                const noResults = document.createElement("li");
+                noResults.textContent = "No se encontraron clientes";
+                noResults.className = "p-2 text-muted";
+                noResults.setAttribute("role", "option");
+                lista.appendChild(noResults);
+                return;
+            }
+            data.forEach(cliente => {
+                const item = document.createElement("li");
+                item.textContent = `${cliente.ci} - ${cliente.nombre}`;
+                item.className = "p-2";
+                item.style.cursor = "pointer";
+                item.setAttribute("role", "option");
+                item.style.backgroundColor = "#f9f9f9";
+                item.onmouseover = () => item.style.backgroundColor = "#e9e9e9";
+                item.onmouseout = () => item.style.backgroundColor = "#f9f9f9";
+                item.onclick = () => {
+                    document.getElementById("clienteInput").value = cliente.ci;
+                    lista.innerHTML = "";
+                };
+                lista.appendChild(item);
+            });
+        })
+        .catch(error => {
+            console.error('Error al buscar clientes:', error.message);
+        });
+});
+</script>
+{% endblock %}
+
+

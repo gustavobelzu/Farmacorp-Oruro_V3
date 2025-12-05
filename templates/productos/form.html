@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Producto
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-label {
+        font-weight: 500;
+    }
+    .hint-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas {% if form.instance.pk %}fa-edit{% else %}fa-plus-circle{% endif %} text-primary me-2"></i>
+                {% if form.instance.pk %}Editar{% else %}Nuevo{% endif %} Producto
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'productos:list' %}">Productos</a></li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Nuevo{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row g-4">
+                            <!-- Información Básica -->
+                            <div class="col-12">
+                                <h5 class="card-title mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del Producto*</label>
+                                    {% load widget_tweaks %}
+                                    {{ form.nombre|add_class:"form-control" }}
+                                    {% if form.nombre.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.nombre.errors.0 }}</div>
+                                    {% endif %}
+                                    {% if form.nombre.help_text %}
+                                        <div class="hint-text mt-1">{{ form.nombre.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.codigo_barras.id_for_label }}" class="form-label">Código de Barras*</label>
+                                    {{ form.codigo_barras|add_class:"form-control" }}
+                                    {% if form.codigo_barras.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.codigo_barras.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
+                                    {{ form.descripcion|add_class:"form-control" }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.descripcion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Información de Precios -->
+                            <div class="col-12">
+                                <h5 class="card-title mb-3">
+                                    <i class="fas fa-tag me-2"></i>Precios y Stock
+                                </h5>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.precio_unitario.id_for_label }}" class="form-label">Precio Unitario*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Bs</span>
+                                        {{ form.precio_unitario|add_class:"form-control" }}
+                                    </div>
+                                    {% if form.precio_unitario.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.precio_unitario.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.stock.id_for_label }}" class="form-label">Stock</label>
+                                    {{ form.stock|add_class:"form-control" }}
+                                    {% if form.stock.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.stock.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.iva.id_for_label }}" class="form-label">iva</label>
+                                    {{ form.iva|add_class:"form-control" }}
+                                    {% if form.iva.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.iva.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mt-2">
+                                    {{ form.estado|add_class:"form-check-input" }}
+                                    <label for="{{ form.estado.id_for_label }}" class="form-check-label">Estado</label>
+                                    {% if form.estado.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.estado.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+
+                            <!-- Fecha de Vencimiento -->
+                          <div class="col-12">
+                                <h5 class="card-title mb-3">
+                                    <i class="fas fa-folder me-2"></i>Fecha de Vencimiento
+                                </h5>
+                                <input type="date" class="form-control" name="fecha_vencimiento" id="fecha_vencimiento">
+                            </div>
+
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.proveedor.id_for_label }}" class="form-label">Proveedor*</label>
+                                    {{ form.proveedor|add_class:"form-select" }}
+                                    {% if form.proveedor.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.proveedor.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'productos:list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Guardar Producto
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Card de Ayuda -->
+            <div class="card bg-light shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-question-circle text-primary me-2"></i>Ayuda
+                    </h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Los campos marcados con * son obligatorios
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-barcode me-2"></i>
+                            El código de barras debe ser único
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-box me-2"></i>
+                            El stock mínimo ayuda a generar alertas
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if form.instance.pk %}
+            <!-- Información Adicional -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle text-primary me-2"></i>Información Adicional
+                    </h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <span class="text-muted">Fecha de Registro:</span><br>
+                            <strong>{{ form.instance.fecha_registro|date:"d/m/Y H:i" }}</strong>
+                        </li>
+                        <li class="mb-2">
+                            <span class="text-muted">Última Actualización:</span><br>
+                            <strong>{{ form.instance.fecha_actualizacion|date:"d/m/Y H:i" }}</strong>
+                        </li>
+                        <li class="mb-2">
+                            <span class="text-muted">Ventas Totales:</span><br>
+                            <strong>{{ form.instance.detalles_ventas.count }} unidades</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formulario
+    const form = document.querySelector('.needs-validation');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Preview de imagen si existe un campo de imagen
+    const imageInput = document.querySelector('input[type="file"]');
+    if (imageInput) {
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

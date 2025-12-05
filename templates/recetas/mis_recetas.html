@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mis Recetas Médicas{% endblock %}
+
+{% block extra_css %}
+<style>
+.receta-card {
+    transition: transform 0.2s;
+}
+.receta-card:hover {
+    transform: translateY(-5px);
+}
+.status-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+.medicina-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-prescription-bottle-alt me-2"></i>Mis Recetas Médicas
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Mis Recetas</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded p-3">
+                                <i class="fas fa-file-medical fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Total Recetas</h6>
+                            <h3 class="card-title mb-0">{{ total_recetas }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 text-success rounded p-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Recetas Vigentes</h6>
+                            <h3 class="card-title mb-0">{{ recetas_vigentes }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recetas Activas -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-clock me-2"></i>Recetas Activas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                {% for receta in recetas_activas %}
+                <div class="col-xl-4 col-md-6">
+                    <div class="card receta-card h-100">
+                        <div class="card-body">
+                            <span class="status-badge badge bg-success">Activa</span>
+                            <div class="d-flex mb-3">
+                                <div class="medicina-icon bg-primary bg-opacity-10 text-primary me-3">
+                                    <i class="fas fa-pills"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">{{ receta.Medicamento }}</h5>
+                                    <p class="card-text text-muted small mb-0">
+                                        Receta #{{ receta.id_receta }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <p class="card-text small mb-1">
+                                    <i class="fas fa-user-md me-2 text-primary"></i>
+                                    Dr. {{ receta.Matricula_medico }}
+                                </p>
+                                <p class="card-text small mb-1">
+                                    <i class="fas fa-calendar me-2 text-muted"></i>
+                                    {{ receta.fecha_emision|date:"d/m/Y" }}
+                                </p>
+                                <p class="card-text small mb-0">
+                                    <i class="fas fa-pills me-2 text-success"></i>
+                                    Cantidad: {{ receta.Cantidad }}
+                                </p>
+                            </div>
+                            <div class="mt-auto">
+                                <a href="{% url 'recetas:detalle' receta.id_receta %}" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-eye me-2"></i>Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-4">
+                        <i class="fas fa-prescription-bottle-alt fa-3x text-muted mb-3"></i>
+                        <h5>No hay recetas activas</h5>
+                        <p class="text-muted">Las recetas se mostrarán aquí cuando estén vigentes</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Recetas -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>Historial de Recetas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Medicamento</th>
+                            <th>Doctor</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receta in recetas_pasadas %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded p-2 me-2">
+                                        <i class="fas fa-calendar text-primary"></i>
+                                    </div>
+                                    <div>
+                                        {{ receta.fecha_emision|date:"d/m/Y" }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ receta.Medicamento }}</td>
+                            <td>Dr. {{ receta.Matricula_medico }}</td>
+                            <td>{{ receta.Cantidad }}</td>
+                            <td>
+                                <span class="badge bg-secondary">Vencida</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'recetas:detalle' receta.id_receta %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-history fa-2x mb-2"></i>
+                                    <p class="mb-0">No hay recetas anteriores</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

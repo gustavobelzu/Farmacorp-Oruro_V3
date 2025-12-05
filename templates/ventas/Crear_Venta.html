@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Registrar Venta con Productos</h2>
+  <form method="post">
+    {% csrf_token %}
+    <fieldset>
+      <legend>Datos de la Venta</legend>
+      {{ venta_form.as_p }}
+    </fieldset>
+
+    <fieldset>
+      <legend>Productos</legend>
+      <table class="table" id="tabla-productos">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Descuento (%)</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn btn-secondary" id="agregar">Agregar Producto</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pago</legend>
+      {{ pago_form.as_p }}
+    </fieldset>
+
+    <h4 class="text-end mt-3">Total: <span id="total">0.00</span> Bs</h4>
+
+    <button type="submit" class="btn btn-success">Guardar Venta</button>
+  </form>
+</div>
+
+<script>
+  const productos = JSON.parse(document.getElementById("productos-data").textContent);
+  const tbody = document.querySelector("#tabla-productos tbody");
+  const totalDisplay = document.getElementById("total");
+
+  document.getElementById("agregar").addEventListener("click", () => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>
+        <select name="producto[]" class="form-select">
+          ${productos.map(p => `<option value="${p.codigo_barras}">${p.nombre}</option>`).join("")}
+        </select>
+      </td>
+      <td><input type="number" name="cantidad[]" class="form-control cantidad" value="1"></td>
+      <td><input type="number" name="precio_unitario[]" class="form-control precio" value="0" step="0.01"></td>
+      <td><input type="number" name="descuento[]" class="form-control descuento" value="0" step="0.01"></td>
+      <td class="subtotal">0.00</td>
+      <td><button type="button" class="btn btn-danger btn-sm eliminar">X</button></td>
+    `;
+    tbody.appendChild(row);
+    actualizarTotales();
+  });
+
+  tbody.addEventListener("input", actualizarTotales);
+  tbody.addEventListener("click", e => {
+    if (e.target.classList.contains("eliminar")) {
+      e.target.closest("tr").remove();
+      actualizarTotales();
+    }
+  });
+
+  function actualizarTotales() {
+    let total = 0;
+    tbody.querySelectorAll("tr").forEach(row => {
+      const cantidad = parseFloat(row.querySelector(".cantidad").value) || 0;
+      const precio = parseFloat(row.querySelector(".precio").value) || 0;
+      const descuento = parseFloat(row.querySelector(".descuento").value) || 0;
+      const subtotal = cantidad * precio * (1 - descuento / 100);
+      row.querySelector(".subtotal").textContent = subtotal.toFixed(2);
+      total += subtotal;
+    });
+    totalDisplay.textContent = total.toFixed(2);
+    document.querySelector("[name='monto']").value = total.toFixed(2);
+  }
+</script>
+{% endblock %}

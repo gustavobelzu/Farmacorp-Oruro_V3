@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Receta{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-danger mb-0">
+                <i class="fas fa-trash-alt me-2"></i>Eliminar Receta
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'recetas:list' %}">Recetas</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Card -->
+    <div class="card shadow-sm border-danger">
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                <h4 class="text-danger">¿Estás seguro de que deseas eliminar esta receta?</h4>
+                <p class="lead mb-0">Esta acción eliminará permanentemente el registro de la receta.</p>
+            </div>
+
+            <!-- Receta Details -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="alert alert-light border">
+                        <h6 class="alert-heading mb-3">
+                            <i class="fas fa-user me-2"></i>Información del Paciente
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li>
+                                <strong>Cliente:</strong>
+                                {{ object.cliente.nombre }}
+                            </li>
+                            <li>
+                                <strong>ID:</strong>
+                                {{ object.id_receta }}
+                            </li>
+                            <li>
+                                <strong>Fecha:</strong>
+                                {{ object.fecha_emision|date:"d/m/Y H:i" }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="alert alert-light border">
+                        <h6 class="alert-heading mb-3">
+                            <i class="fas fa-prescription-bottle-alt me-2"></i>Detalles de la Receta
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li>
+                                <strong>Medicamento:</strong>
+                                {{ object.Medicamento }}
+                            </li>
+                            <li>
+                                <strong>Cantidad:</strong>
+                                {{ object.Cantidad }} unidades
+                            </li>
+                            <li>
+                                <strong>Médico:</strong>
+                                {{ object.Matricula_medico }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Messages -->
+            <div class="alert alert-warning mt-3">
+                <h6 class="alert-heading mb-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>Consecuencias de la Eliminación
+                </h6>
+                <ul class="mb-0">
+                    <li>Se eliminará el registro completo de la receta</li>
+                    <li>La información no podrá ser recuperada</li>
+                    <li>Se perderá el historial asociado</li>
+                    <li>Esta acción no se puede deshacer</li>
+                </ul>
+            </div>
+
+            <form method="post" class="d-flex justify-content-center gap-2 mt-4">
+                {% csrf_token %}
+                <a href="{% url 'recetas:list' %}" class="btn btn-light">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Confirmar Eliminación
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

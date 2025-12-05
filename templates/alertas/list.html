@@ -1,0 +1,336 @@
+﻿{% extends "base.html" %}
+{% block title %}Alertas del Sistema{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-bell text-danger me-2"></i>Alertas del Sistema
+            </h2>
+            <p class="text-muted mt-2 mb-0">Monitoreo y gestión de alertas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger" id="markAllRead">
+                <i class="fas fa-check-double me-2"></i>Marcar todo como leído
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-2"></i>Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Excel</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>PDF</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Alertas Críticas</h6>
+                    <h3 class="card-title mb-0">{{ alertas_criticas|default:"0" }}</h3>
+                    <small>Requieren atención inmediata</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning bg-gradient text-dark">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Stock Bajo</h6>
+                    <h3 class="card-title mb-0">{{ alertas_stock|default:"0" }}</h3>
+                    <small>Productos por agotar</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Por Vencer</h6>
+                    <h3 class="card-title mb-0">{{ alertas_vencimiento|default:"0" }}</h3>
+                    <small>Productos próximos a vencer</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success bg-gradient text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Resueltas</h6>
+                    <h3 class="card-title mb-0">{{ alertas_resueltas|default:"0" }}</h3>
+                    <small>En las últimas 24h</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" placeholder="Buscar alerta..." id="searchAlert">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filterTipo">
+                        <option value="">Todos los tipos</option>
+                        <option value="critica">Crítica</option>
+                        <option value="stock">Stock Bajo</option>
+                        <option value="vencimiento">Vencimiento</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filterEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="activa">Activa</option>
+                        <option value="resuelta">Resuelta</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Aplicar filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    {% if alertas %}
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Producto</th>
+                        <th scope="col">Descripción</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alertas %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="{{ a.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            {% if a.tipo == 'CRITICA' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Crítica
+                                </span>
+                            {% elif a.tipo == 'STOCK' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-box me-1"></i>Stock Bajo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-clock me-1"></i>Vencimiento
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-prescription-bottle-alt text-primary me-2"></i>
+                                <div>
+                                    <div class="fw-bold">{{ a.producto.nombre }}</div>
+                                    <small class="text-muted">Código: {{ a.producto.codigo_barras }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <p class="mb-0">{{ a.descripcion }}</p>
+                        </td>
+                        <td>
+                            {% if a.estado == 'ACTIVA' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Activa
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Resuelta
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="text-muted">
+                                <i class="far fa-calendar me-1"></i>
+                                {{ a.fecha_alerta|date:"d/m/Y" }}
+                                <br>
+                                <small>
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ a.fecha_alerta|date:"H:i" }}
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-eye me-2 text-primary"></i>Ver detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-check me-2 text-success"></i>Marcar como resuelta
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+            <h4 class="text-success">¡Todo en orden!</h4>
+            <p class="text-muted mb-0">No hay alertas activas en el sistema actualmente.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if alertas.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if alertas.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ alertas.previous_page_number }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in alertas.paginator.page_range %}
+                {% if alertas.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if alertas.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ alertas.next_page_number }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchAlert');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+
+    // Seleccionar todos los checkboxes
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('tbody .form-check-input');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    // Filtros
+    const filterTipo = document.getElementById('filterTipo');
+    const filterEstado = document.getElementById('filterEstado');
+
+    function applyFilters() {
+        const selectedTipo = filterTipo.value.toLowerCase();
+        const selectedEstado = filterEstado.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const tipoCell = row.querySelector('td:nth-child(2)');
+            const estadoCell = row.querySelector('td:nth-child(5)');
+            
+            const tipoMatch = !selectedTipo || (tipoCell && tipoCell.textContent.toLowerCase().includes(selectedTipo));
+            const estadoMatch = !selectedEstado || (estadoCell && estadoCell.textContent.toLowerCase().includes(selectedEstado));
+
+            row.style.display = (tipoMatch && estadoMatch) ? '' : 'none';
+        });
+    }
+
+    if (filterTipo) filterTipo.addEventListener('change', applyFilters);
+    if (filterEstado) filterEstado.addEventListener('change', applyFilters);
+
+    // Marcar todo como leído
+    const markAllReadBtn = document.getElementById('markAllRead');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('tbody .form-check-input:checked');
+            if (checkboxes.length === 0) {
+                alert('Por favor, selecciona al menos una alerta');
+                return;
+            }
+
+            if (confirm('¿Estás seguro de marcar estas alertas como leídas?')) {
+                // Aquí iría la lógica para marcar como leídas
+                checkboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const estadoCell = row.querySelector('td:nth-child(5)');
+                    if (estadoCell) {
+                        estadoCell.innerHTML = `
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>Resuelta
+                            </span>
+                        `;
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}

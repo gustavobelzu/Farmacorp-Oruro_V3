@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reporte de Ganancias sin Pérdidas - Farmacorp{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">
+                <i class="fas fa-chart-line text-success me-2"></i>Reporte de Ganancias sin Pérdidas
+            </h1>
+            <p class="text-muted">Análisis de ventas con ganancia positiva o cero</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'reportes:exportar_ganancias_excel' %}?fecha_inicio={{ fecha_inicio|date:'Y-m-d' }}&fecha_fin={{ fecha_fin|date:'Y-m-d' }}&sucursal={{ sucursal_id|default:'' }}" 
+               class="btn btn-success me-2">
+                <i class="fas fa-file-excel me-2"></i>Descargar Excel
+            </a>
+            <a href="{% url 'reportes:list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Atrás
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio" 
+                           value="{{ fecha_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" name="fecha_fin" id="fecha_fin" 
+                           value="{{ fecha_fin|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="sucursal" class="form-label">Sucursal</label>
+                    <select class="form-select" name="sucursal" id="sucursal">
+                        <option value="">Todas las sucursales</option>
+                        {% for sucursal in sucursales %}
+                            <option value="{{ sucursal.id }}" {% if sucursal.id|stringformat:"s" == sucursal_id %}selected{% endif %}>
+                                {{ sucursal.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen KPI -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border-left-success shadow-sm">
+                <div class="card-body">
+                    <div class="text-success font-weight-bold text-uppercase mb-1">Total Ganancias</div>
+                    <div class="h3 mb-0" id="total-ganancias">
+                        Bs. {{ total_ganancias|floatformat:2 }}
+                    </div>
+                    <small class="text-muted">De {{ cantidad_detalles }} productos rentables</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-left-info shadow-sm">
+                <div class="card-body">
+                    <div class="text-info font-weight-bold text-uppercase mb-1">Ganancia Promedio</div>
+                    <div class="h3 mb-0">
+                        Bs. {% if cantidad_detalles > 0 %}{{ total_ganancias|add:0|stringformat:"f" }}{% else %}0.00{% endif %}
+                    </div>
+                    <small class="text-muted">Por producto vendido</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Detalles -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-receipt me-2"></i>Detalles de Ventas Rentables (Top 50)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                            <th class="text-success">Ganancia</th>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detalle in detalles %}
+                            <tr>
+                                <td>
+                                    <strong>{{ detalle.producto.nombre }}</strong><br>
+                                    <small class="text-muted">{{ detalle.producto.codigo_barras }}</small>
+                                </td>
+                                <td>{{ detalle.cantidad }}</td>
+                                <td>Bs. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                                <td>Bs. {{ detalle.subtotal|floatformat:2 }}</td>
+                                <td class="text-success font-weight-bold">
+                                    <i class="fas fa-arrow-up"></i> Bs. {{ detalle.ganancia|floatformat:2 }}
+                                </td>
+                                <td>{{ detalle.venta.cliente.nombre }}</td>
+                                <td>{{ detalle.venta.fecha|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                    No hay datos disponibles
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Productos Rentables -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-star me-2"></i>Top 10 Productos Más Rentables
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <canvas id="gananciasChart" style="max-height: 300px;"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Total Ganancia</th>
+                                    <th>Veces</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for producto in productos_ganancia %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ producto.producto__nombre }}</strong>
+                                        </td>
+                                        <td class="text-success font-weight-bold">
+                                            Bs. {{ producto.total_ganancia|floatformat:2 }}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ producto.cantidad }}</span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">Sin datos</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-success {
+        border-left: 4px solid #28a745;
+    }
+    .border-left-info {
+        border-left: 4px solid #17a2b8;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de ganancias por producto
+        const ganancias = JSON.parse('{{ productos_ganancia_json|escapejs }}');
+        const productos = ganancias.map(p => p.producto__nombre);
+        const valores = ganancias.map(p => parseFloat(p.total_ganancia));
+        
+        if (productos.length > 0) {
+            new Chart(document.getElementById('gananciasChart'), {
+                type: 'bar',
+                data: {
+                    labels: productos,
+                    datasets: [{
+                        label: 'Ganancia Total (Bs.)',
+                        data: valores,
+                        backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

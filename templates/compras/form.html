@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Compra{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                {% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Compra
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'productos:listc' %}">Compras</a></li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}Editar{% else %}Nueva{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" id="compraForm" novalidate>
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Por favor corrige los siguientes errores:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <!-- Producto -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.producto }}
+                            <label for="{{ form.producto.id_for_label }}">
+                                <i class="fas fa-box me-2"></i>Producto
+                            </label>
+                        </div>
+                        {% if form.producto.help_text %}
+                            <div class="form-text">{{ form.producto.help_text }}</div>
+                        {% endif %}
+                        {% if form.producto.errors %}
+                            <div class="invalid-feedback d-block">{{ form.producto.errors|join:", " }}</div>
+                        {% endif %}
+                        <!-- Product Info Card -->
+                        <div class="card mt-3 d-none" id="productInfo">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>Información del Producto
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="d-block"><strong>Stock Actual:</strong> <span id="currentStock">-</span></small>
+                                        <small class="d-block"><strong>Precio Actual:</strong> <span id="currentPrice">-</span></small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="d-block"><strong>Proveedor:</strong> <span id="currentProvider">-</span></small>
+                                        <small class="d-block"><strong>Última Compra:</strong> <span id="lastPurchase">-</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cantidad y Precio -->
+                    <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.cantidad }}
+                                    <label for="{{ form.cantidad.id_for_label }}">
+                                        <i class="fas fa-cubes me-2"></i>Cantidad
+                                    </label>
+                                </div>
+                                {% if form.cantidad.help_text %}
+                                    <div class="form-text">{{ form.cantidad.help_text }}</div>
+                                {% endif %}
+                                {% if form.cantidad.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.cantidad.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.precio_compra }}
+                                    <label for="{{ form.precio_compra.id_for_label }}">
+                                        <i class="fas fa-tags me-2"></i>Precio Total
+                                    </label>
+                                </div>
+                                {% if form.precio_compra.help_text %}
+                                    <div class="form-text">{{ form.precio_compra.help_text }}</div>
+                                {% endif %}
+                                {% if form.precio_compra.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.precio_compra.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Price Info Card -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-calculator me-2"></i>Cálculos
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="d-block"><strong>Precio Unitario:</strong> <span id="unitPrice">-</span></small>
+                                        <small class="d-block"><strong>Total:</strong> <span id="totalPrice">-</span></small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="d-block"><strong>Margen:</strong> <span id="margin">-</span></small>
+                                        <small class="d-block"><strong>IVA:</strong> <span id="iva">-</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'productos:listc' %}" class="btn btn-light">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('compraForm');
+    const productoSelect = document.getElementById('{{ form.producto.id_for_label }}');
+    const cantidadInput = document.getElementById('{{ form.cantidad.id_for_label }}');
+    const precioInput = document.getElementById('{{ form.precio_compra.id_for_label }}');
+    const productInfo = document.getElementById('productInfo');
+
+    // Initialize Choices.js for product select
+    if (productoSelect) {
+        new Choices(productoSelect, {
+            searchEnabled: true,
+            searchPlaceholderValue: 'Buscar producto...',
+            itemSelectText: 'Presiona para seleccionar',
+            noResultsText: 'No se encontraron resultados',
+            noChoicesText: 'No hay productos disponibles'
+        });
+    }
+
+    // Form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Load product info when selected
+    productoSelect.addEventListener('change', async function() {
+        const productId = this.value;
+        if (!productId) {
+            productInfo.classList.add('d-none');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/producto/${productId}/info/`);
+            if (!response.ok) throw new Error('Error al cargar información del producto');
+            const data = await response.json();
+            
+            document.getElementById('currentStock').textContent = data.stock;
+            document.getElementById('currentPrice').textContent = `Bs ${data.precio_unitario}`;
+            document.getElementById('currentProvider').textContent = data.proveedor;
+            document.getElementById('lastPurchase').textContent = data.ultima_compra || 'Sin compras';
+            
+            productInfo.classList.remove('d-none');
+        } catch (error) {
+            console.error('Error:', error);
+            productInfo.classList.add('d-none');
+        }
+    });
+
+    // Calculate unit price and totals
+    function updateCalculations() {
+        const cantidad = Number(cantidadInput.value) || 0;
+        const precioTotal = Number(precioInput.value) || 0;
+        
+        if (cantidad > 0 && precioTotal > 0) {
+            const unitPrice = precioTotal / cantidad;
+            document.getElementById('unitPrice').textContent = `Bs ${unitPrice.toFixed(2)}`;
+            document.getElementById('totalPrice').textContent = `Bs ${precioTotal.toFixed(2)}`;
+            
+            // Calculate margin if product price is available
+            const currentPrice = document.getElementById('currentPrice').textContent;
+            if (currentPrice !== '-') {
+                const actualPrice = Number(currentPrice.replace('Bs ', ''));
+                const margin = ((actualPrice - unitPrice) / unitPrice * 100).toFixed(2);
+                document.getElementById('margin').textContent = `${margin}%`;
+            }
+
+            // Calculate IVA (13%)
+            const iva = precioTotal * 0.13;
+            document.getElementById('iva').textContent = `Bs ${iva.toFixed(2)}`;
+        } else {
+            document.getElementById('unitPrice').textContent = '-';
+            document.getElementById('totalPrice').textContent = '-';
+            document.getElementById('margin').textContent = '-';
+            document.getElementById('iva').textContent = '-';
+        }
+    }
+
+    cantidadInput.addEventListener('input', updateCalculations);
+    precioInput.addEventListener('input', updateCalculations);
+
+    // Initialize calculations if values exist
+    if (cantidadInput.value || precioInput.value) {
+        updateCalculations();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

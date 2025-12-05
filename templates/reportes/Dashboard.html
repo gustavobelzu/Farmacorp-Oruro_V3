@@ -1,0 +1,1083 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Dashboard Analytics{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 300px;
+    }
+    .daterangepicker {
+        font-family: inherit;
+        border-radius: 8px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.1);
+    }
+    .custom-chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .custom-chart-legend .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    .sparkline .progress {
+        height: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-chart-line text-primary me-2"></i>Dashboard Analytics
+            </h2>
+            <p class="text-muted mt-2 mb-0">Análisis y métricas en tiempo real</p>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" data-period="day">Hoy</button>
+                <button type="button" class="btn btn-outline-primary" data-period="week">Semana</button>
+                <button type="button" class="btn btn-outline-primary active" data-period="month">Mes</button>
+                <button type="button" class="btn btn-outline-primary" data-period="year">Año</button>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-2"></i>Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'reportes:exportar_excel' %}?{{ request.GET.urlencode }}">
+                            <i class="far fa-file-excel me-2 text-success"></i>Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'reportes:exportar_pdf' %}?{{ request.GET.urlencode }}">
+                            <i class="far fa-file-pdf me-2 text-danger"></i>PDF
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="#" id="downloadAllCharts">
+                            <i class="fas fa-chart-bar me-2 text-primary"></i>Todos los gráficos
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <!-- Botón directo al reporte de ganancias -->
+            <div>
+                <a href="{% url 'reportes:ganancias' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-chart-line me-2"></i>Ver Ganancias
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="far fa-calendar-alt text-muted"></i>
+                        </span>
+                        <input type="text" id="dateRange" class="form-control" placeholder="Seleccionar rango de fechas">
+                        <input type="hidden" name="fecha_inicio" id="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+                        <input type="hidden" name="fecha_fin" id="fecha_fin" value="{{ request.GET.fecha_fin }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-store text-muted"></i>
+                        </span>
+                        <select name="sucursal" id="sucursal" class="form-select">
+                            <option value="">Todas las sucursales</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}" {% if request.GET.sucursal == s.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ s.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-tags text-muted"></i>
+                        </span>
+                        <select name="categoria" id="categoria" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Aplicar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Ingresos Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                <i class="fas fa-dollar-sign text-primary fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-0">Ingresos</h6>
+                                <h4 class="mb-0">Bs {{ ingresos|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">
+                                <i class="fas fa-arrow-up me-1"></i>12.5%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-primary" style="width: 75%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">vs. período anterior</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Costos Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                                <i class="fas fa-chart-pie text-danger fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-0">Costos</h6>
+                                <h4 class="mb-0">Bs {{ costos|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-danger">
+                                <i class="fas fa-arrow-up me-1"></i>8.3%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-danger" style="width: 65%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">vs. período anterior</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ganancia Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                <i class="fas fa-chart-line text-success fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-0">Ganancia</h6>
+                                <h4 class="mb-0">Bs {{ ganancia|floatformat:2 }}</h4>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">
+                                <i class="fas fa-arrow-up me-1"></i>15.8%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">vs. período anterior</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Margen Card -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                                <i class="fas fa-percentage text-info fa-lg"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-0">Margen</h6>
+                                <h4 class="mb-0">{{ margen|default:"35.4" }}%</h4>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-info">
+                                <i class="fas fa-arrow-up me-1"></i>2.1%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 45%"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">vs. período anterior</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Indicators -->
+    <div class="row g-4 mb-4">
+        <!-- ROI Card -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">ROI</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm p-0" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v text-muted"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Exportar</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-expand me-2"></i>Ver detalles</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__circle" stroke="#e9ecef" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                            <circle class="progress-ring__circle" stroke="#0d6efd" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"
+                                  stroke-dasharray="326.7256359733385"
+                                  stroke-dashoffset="{{ roi_percentage|default:65|multiply:3.267256359733385 }}"/>
+                            <text x="50%" y="50%" text-anchor="middle" dy=".3em" class="h4 mb-0">{{ roi_percentage|default:"65" }}%</text>
+                        </svg>
+                        <p class="text-muted mb-0 mt-3">Retorno de inversión</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Eficiencia Operativa -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">Eficiencia Operativa</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm p-0" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v text-muted"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Exportar</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-expand me-2"></i>Ver detalles</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Productividad</span>
+                                <span class="fw-bold">85%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" style="width: 85%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Tiempo de respuesta</span>
+                                <span class="fw-bold">92%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-info" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Satisfacción</span>
+                                <span class="fw-bold">78%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-warning" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Clave -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">Métricas Clave</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm p-0" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v text-muted"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Exportar</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-expand me-2"></i>Ver detalles</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <ul class="list-unstyled mb-0">
+                        <li class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-success bg-opacity-10 p-2 me-3">
+                                    <i class="fas fa-shopping-cart text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Ventas por hora</h6>
+                                    <small class="text-muted">Promedio</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-success">{{ ventas_hora|default:"42" }}</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-warning bg-opacity-10 p-2 me-3">
+                                    <i class="fas fa-users text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Clientes activos</h6>
+                                    <small class="text-muted">Este mes</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-warning text-dark">{{ clientes_activos|default:"156" }}</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-info bg-opacity-10 p-2 me-3">
+                                    <i class="fas fa-box text-info"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Stock crítico</h6>
+                                    <small class="text-muted">Productos</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-info">{{ stock_critico|default:"8" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Ventas por Sucursal -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>Ventas por Sucursal
+                    </h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-chart-type="bar" data-chart-target="ventasSucursal">
+                            <i class="fas fa-chart-bar"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-chart-type="line" data-chart-target="ventasSucursal">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="ventasSucursalChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="custom-chart-legend" id="ventasSucursalLegend"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ganancias vs Costos -->
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie text-primary me-2"></i>Distribución Financiera
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-link btn-sm p-0" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" id="downloadGanancias">
+                                    <i class="fas fa-download me-2"></i>Descargar PNG
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-expand me-2"></i>Ver detalles
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="gananciasChart" 
+                            data-ingresos="{{ ingresos }}"
+                            data-costos="{{ costos }}"
+                            data-ganancia="{{ ganancia }}">
+                        </canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="custom-chart-legend" id="gananciasLegend"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Productos Más Vendidos -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box text-primary me-2"></i>Productos Más Vendidos
+                    </h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-chart-type="bar" data-chart-target="productos">
+                            <i class="fas fa-chart-bar"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-chart-type="doughnut" data-chart-target="productos">
+                            <i class="fas fa-chart-pie"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="productosChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="custom-chart-legend" id="productosLegend"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tendencias de Ventas -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line text-primary me-2"></i>Tendencias de Ventas
+                    </h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active" data-range="day">
+                            Día
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-range="week">
+                            Semana
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-range="month">
+                            Mes
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="tendenciasChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="row text-center">
+                        <div class="col">
+                            <p class="mb-0 text-muted">Promedio</p>
+                            <h5 class="mb-0">Bs {{ promedio_ventas|default:"1,234.56"|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col">
+                            <p class="mb-0 text-muted">Máximo</p>
+                            <h5 class="mb-0">Bs {{ max_ventas|default:"2,345.67"|floatformat:2 }}</h5>
+                        </div>
+                        <div class="col">
+                            <p class="mb-0 text-muted">Mínimo</p>
+                            <h5 class="mb-0">Bs {{ min_ventas|default:"567.89"|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Tables Section -->
+    <div class="row g-4">
+        <!-- Top Products Table -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-star text-warning me-2"></i>Top Productos
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" placeholder="Buscar producto..." id="searchProduct">
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" id="refreshTable">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3">Producto</th>
+                                    <th>Stock</th>
+                                    <th>Ventas</th>
+                                    <th>Ingresos</th>
+                                    <th>Tendencia</th>
+                                    <th class="text-end pe-3">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in top_productos %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if p.imagen %}
+                                                    <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-box text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ p.nombre }}</h6>
+                                                <small class="text-muted">COD: {{ p.codigo }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if p.stock < 10 %}
+                                            <span class="badge bg-danger">Crítico</span>
+                                        {% elif p.stock < 20 %}
+                                            <span class="badge bg-warning text-dark">Bajo</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Normal</span>
+                                        {% endif %}
+                                        <small class="d-block text-muted mt-1">{{ p.stock }} unidades</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ p.cantidad_total }}</span>
+                                            {% if p.variacion > 0 %}
+                                                <small class="text-success">
+                                                    <i class="fas fa-arrow-up me-1"></i>{{ p.variacion }}%
+                                                </small>
+                                            {% elif p.variacion < 0 %}
+                                                <small class="text-danger">
+                                                    <i class="fas fa-arrow-down me-1"></i>{{ p.variacion|abs }}%
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">
+                                                    <i class="fas fa-minus me-1"></i>0%
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h6 class="mb-0">Bs {{ p.total_vendido|floatformat:2 }}</h6>
+                                        <small class="text-muted">{{ p.porcentaje_total|default:"0" }}% del total</small>
+                                    </td>
+                                    <td>
+                                        <div class="sparkline">
+                                            <!-- Aquí irá un mini gráfico de tendencia -->
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" data-width="{{ p.tendencia|default:85 }}"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" href="#">
+                                                        <i class="fas fa-eye me-2 text-primary"></i>Ver detalles
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="#">
+                                                        <i class="fas fa-chart-line me-2 text-success"></i>Ver historial
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="#">
+                                                        <i class="fas fa-print me-2 text-secondary"></i>Imprimir reporte
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-box fa-2x mb-3"></i>
+                                            <p class="mb-0">No hay datos disponibles</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white py-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <small class="text-muted">Mostrando {{ top_productos|length }} de {{ total_productos|default:"0" }} productos</small>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-sm btn-primary">Ver todos los productos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-xl-4">
+            <!-- Recent Activity -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock text-info me-2"></i>Actividad Reciente
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for actividad in actividades_recientes|default:"" %}
+                        <div class="list-group-item border-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="activity-icon rounded-circle">
+                                        <i class="fas fa-shopping-cart text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">Nueva venta completada</p>
+                                    <small class="text-muted">hace 5 minutos</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <!-- Ejemplo de actividades (reemplazar con datos reales) -->
+                        <div class="list-group-item border-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                                        <i class="fas fa-shopping-cart text-success"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">Nueva venta completada</p>
+                                    <small class="text-muted">hace 5 minutos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item border-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+                                        <i class="fas fa-box text-warning"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">Stock bajo detectado</p>
+                                    <small class="text-muted">hace 15 minutos</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item border-0">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-info bg-opacity-10 p-2">
+                                        <i class="fas fa-sync text-info"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <p class="mb-0">Actualización de inventario</p>
+                                    <small class="text-muted">hace 30 minutos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 text-center py-3">
+                    <button class="btn btn-sm btn-link text-primary">Ver todas las actividades</button>
+                </div>
+            </div>
+
+            <!-- Store Hours -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock text-primary me-2"></i>Horas Pico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="hoursChart" height="200"></canvas>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <div class="row text-center">
+                        <div class="col">
+                            <p class="mb-0 text-muted">Hora más activa</p>
+                            <h5 class="mb-0">14:00</h5>
+                        </div>
+                        <div class="col">
+                            <p class="mb-0 text-muted">Ventas/Hora</p>
+                            <h5 class="mb-0">42</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DateRangePicker
+    $('#dateRange').daterangepicker({
+        startDate: moment().subtract(29, 'days'),
+        endDate: moment(),
+        ranges: {
+           'Hoy': [moment(), moment()],
+           'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+           'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+           'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+           'Este mes': [moment().startOf('month'), moment().endOf('month')],
+           'Mes pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        },
+        locale: {
+            format: 'DD/MM/YYYY',
+            applyLabel: 'Aplicar',
+            cancelLabel: 'Cancelar',
+            customRangeLabel: 'Rango personalizado'
+        }
+    }, function(start, end) {
+        $('#fecha_inicio').val(start.format('YYYY-MM-DD'));
+        $('#fecha_fin').val(end.format('YYYY-MM-DD'));
+        $('#filterForm').submit();
+    });
+
+    // Inicializar todos los tooltips
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+
+    // Buscar en tabla
+    const searchInput = document.getElementById('searchProduct');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+
+    // === Datos desde Django ===
+    const dataSucursal = JSON.parse('{{ ventas_por_sucursal_json|default:"[]"|escapejs }}') || [];
+    const dataProductos = JSON.parse('{{ top_productos_json|default:"[]"|escapejs }}') || [];
+
+    // Configuración común de Chart.js
+    Chart.defaults.font.family = "'Inter', 'Helvetica', 'Arial', sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0,0,0,0.8)';
+    Chart.defaults.plugins.tooltip.titleFont.size = 13;
+    Chart.defaults.plugins.tooltip.titleFont.weight = 'bold';
+    Chart.defaults.plugins.legend.display = false;
+
+    // === Ventas por sucursal ===
+    const ventasChart = new Chart(document.getElementById('ventasSucursalChart'), {
+        type: 'bar',
+        data: {
+            labels: dataSucursal.map(d => d.sucursal__nombre),
+            datasets: [{
+                label: 'Total Ventas (Bs)',
+                data: dataSucursal.map(d => d.total),
+                backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 2,
+                borderRadius: 5,
+                barThickness: 20
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        callback: value => `Bs ${value.toLocaleString()}`
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => `Bs ${context.raw.toLocaleString()}`
+                    }
+                }
+            }
+        }
+    });
+
+    // === Gráfico de Distribución Financiera ===
+    // Leer datos desde atributos data- del canvas
+    const ganCanvas = document.getElementById('gananciasChart');
+    const ingresos = parseFloat(ganCanvas.dataset.ingresos) || 0;
+    const costos = parseFloat(ganCanvas.dataset.costos) || 0;
+    const ganancia = parseFloat(ganCanvas.dataset.ganancia) || 0;
+
+    const gananciasChart = new Chart(ganCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: ['Ingresos', 'Costos', 'Ganancia Neta'],
+            datasets: [{
+                data: [ingresos, costos, ganancia],
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.2)',
+                    'rgba(220, 53, 69, 0.2)',
+                    'rgba(25, 135, 84, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(13, 110, 253, 1)',
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(25, 135, 84, 1)'
+                ],
+                borderWidth: 2,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: context => `Bs ${context.raw.toLocaleString()}`
+                    }
+                }
+            }
+        }
+    });
+
+    // === Productos más vendidos ===
+    const productosChart = new Chart(document.getElementById('productosChart'), {
+        type: 'bar',
+        data: {
+            labels: dataProductos.map(p => p.nombre),
+            datasets: [{
+                label: 'Cantidad Vendida',
+                data: dataProductos.map(p => p.cantidad_total),
+                backgroundColor: 'rgba(32, 201, 151, 0.2)',
+                borderColor: 'rgba(32, 201, 151, 1)',
+                borderWidth: 2,
+                borderRadius: 5,
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // === Tendencias (ventas por hora) ===
+    const dataHoras = (function(){
+        try {
+            return JSON.parse('{{ ventas_por_hora_json|default:"[]"|escapejs }}') || [];
+        } catch(e) {
+            console.warn('Error parseando ventas_por_hora_json:', e);
+            return [];
+        }
+    })();
+
+    if (dataHoras && dataHoras.length > 0) {
+        const labelsHoras = dataHoras.map(d => (d.hora !== undefined ? `${d.hora}:00` : d.hora));
+        const valoresHoras = dataHoras.map(d => parseFloat(d.monto_total) || 0);
+        const tendenciasCanvas = document.getElementById('tendenciasChart');
+        new Chart(tendenciasCanvas, {
+            type: 'line',
+            data: {
+                labels: labelsHoras,
+                datasets: [{
+                    label: 'Monto por hora (Bs)',
+                    data: valoresHoras,
+                    borderColor: 'rgba(13,110,253,1)',
+                    backgroundColor: 'rgba(13,110,253,0.08)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    } else {
+        // mostrar mensaje sencillo dentro del canvas contenedor si no hay datos
+        const cont = document.getElementById('tendenciasChart').parentElement;
+        const msg = document.createElement('div');
+        msg.className = 'text-center text-muted';
+        msg.style.padding = '40px';
+        msg.textContent = 'No hay datos de tendencias en el rango seleccionado.';
+        cont.innerHTML = '';
+        cont.appendChild(msg);
+    }
+
+    // === Tendencias por Hora ===
+    const hoursChart = new Chart(document.getElementById('hoursChart'), {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Ventas por hora',
+                data: [10, 15, 8, 5, 3, 2, 5, 15, 25, 30, 28, 32, 35, 38, 35, 30, 25, 28, 22, 18, 15, 12, 8, 5],
+                borderColor: 'rgba(13, 110, 253, 1)',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // === Descarga de gráficos ===
+    document.getElementById('downloadGanancias').addEventListener('click', function() {
+        const canvas = document.getElementById('gananciasChart');
+        const link = document.createElement('a');
+        link.download = 'distribucion_financiera.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+
+    // Establecer ancho de barras de progreso
+    document.querySelectorAll('.progress-bar[data-width]').forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = width + '%';
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
+
+

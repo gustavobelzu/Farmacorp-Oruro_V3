@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reporte: Producto Más Caro - Farmacorp{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">
+                <i class="fas fa-gem text-warning me-2"></i>Producto Más Caro Vendido
+            </h1>
+            <p class="text-muted">Análisis de productos con mayor precio unitario en ventas</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'reportes:exportar_producto_caro_excel' %}?fecha_inicio={{ fecha_inicio|date:'Y-m-d' }}&fecha_fin={{ fecha_fin|date:'Y-m-d' }}&sucursal={{ sucursal_id|default:'' }}" 
+               class="btn btn-success me-2">
+                <i class="fas fa-file-excel me-2"></i>Descargar Excel
+            </a>
+            <a href="{% url 'reportes:list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Atrás
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio" 
+                           value="{{ fecha_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" name="fecha_fin" id="fecha_fin" 
+                           value="{{ fecha_fin|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="sucursal" class="form-label">Sucursal</label>
+                    <select class="form-select" name="sucursal" id="sucursal">
+                        <option value="">Todas las sucursales</option>
+                        {% for sucursal in sucursales %}
+                            <option value="{{ sucursal.id }}" {% if sucursal.id|stringformat:"s" == sucursal_id %}selected{% endif %}>
+                                {{ sucursal.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Producto Más Caro -->
+    {% if producto_mas_caro %}
+        <div class="card shadow-lg mb-4 border-warning border-3">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-crown me-2"></i>Producto #1 - Precio Más Alto
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Información del Producto</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Nombre:</dt>
+                            <dd class="col-sm-8">
+                                <strong>{{ producto_mas_caro.producto.nombre }}</strong>
+                            </dd>
+                            <dt class="col-sm-4">Código de Barras:</dt>
+                            <dd class="col-sm-8">
+                                <code class="bg-light p-2">{{ producto_mas_caro.producto.codigo_barras }}</code>
+                            </dd>
+                            <dt class="col-sm-4">Descripción:</dt>
+                            <dd class="col-sm-8">{{ producto_mas_caro.producto.descripcion }}</dd>
+                            <dt class="col-sm-4">Proveedor:</dt>
+                            <dd class="col-sm-8">{{ producto_mas_caro.producto.proveedor.nombre }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">Información de Venta</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Precio Unitario:</dt>
+                            <dd class="col-sm-8">
+                                <h4 class="text-warning mb-0">
+                                    Bs. {{ producto_mas_caro.precio_unitario|floatformat:2 }}
+                                </h4>
+                            </dd>
+                            <dt class="col-sm-4">Cantidad:</dt>
+                            <dd class="col-sm-8">{{ producto_mas_caro.cantidad }} unidad(es)</dd>
+                            <dt class="col-sm-4">Subtotal:</dt>
+                            <dd class="col-sm-8">Bs. {{ producto_mas_caro.subtotal|floatformat:2 }}</dd>
+                            <dt class="col-sm-4">Cliente:</dt>
+                            <dd class="col-sm-8">{{ producto_mas_caro.venta.cliente.nombre }}</dd>
+                            <dt class="col-sm-4">Fecha:</dt>
+                            <dd class="col-sm-8">{{ producto_mas_caro.venta.fecha|date:"d/m/Y H:i" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No hay datos disponibles para el rango de fechas seleccionado.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Gráfico Top 10 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-chart-bar me-2"></i>Gráfico: Top 10 Productos Más Caros
+            </h5>
+        </div>
+        <div class="card-body">
+            <canvas id="preciosChart" style="max-height: 350px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Tabla de Últimas Ventas -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Últimas 20 Transacciones (Ordenadas por Precio)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Código</th>
+                            <th class="text-warning">Precio Unitario</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                            <th>Cliente</th>
+                            <th>Sucursal</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detalle in detalles_vendidos %}
+                            <tr>
+                                <td>
+                                    <strong>{{ detalle.producto.nombre }}</strong>
+                                </td>
+                                <td>
+                                    <code>{{ detalle.producto.codigo_barras }}</code>
+                                </td>
+                                <td class="text-warning font-weight-bold">
+                                    Bs. {{ detalle.precio_unitario|floatformat:2 }}
+                                </td>
+                                <td>{{ detalle.cantidad }}</td>
+                                <td>Bs. {{ detalle.subtotal|floatformat:2 }}</td>
+                                <td>{{ detalle.venta.cliente.nombre }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ detalle.venta.sucursal.nombre }}</span>
+                                </td>
+                                <td>{{ detalle.venta.fecha|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                    No hay datos disponibles
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 10 Productos Más Caros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-trophy me-2"></i>Top 10 Productos Más Caros Vendidos
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>Código</th>
+                            <th class="text-warning">Precio Máximo</th>
+                            <th>Veces Vendido</th>
+                            <th>Total Vendido</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in top_productos_caros %}
+                            <tr>
+                                <td>
+                                    {% if forloop.counter == 1 %}
+                                        <i class="fas fa-crown text-warning fa-lg"></i>
+                                    {% elif forloop.counter == 2 %}
+                                        <i class="fas fa-medal text-secondary fa-lg"></i>
+                                    {% elif forloop.counter == 3 %}
+                                        <i class="fas fa-medal text-danger fa-lg"></i>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ producto.producto__nombre }}</strong><br>
+                                    <small class="text-muted">{{ producto.producto__descripcion }}</small>
+                                </td>
+                                <td>
+                                    <code>{{ producto.producto__codigo_barras }}</code>
+                                </td>
+                                <td class="text-warning font-weight-bold">
+                                    Bs. {{ producto.precio_max|floatformat:2 }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ producto.veces_vendido }}</span>
+                                </td>
+                                <td>Bs. {{ producto.total_vendido|floatformat:2 }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No hay datos disponibles
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-warning {
+        border-width: 3px;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de precios de productos más caros
+        const productos = JSON.parse('{{ top_productos_json|escapejs }}');
+        const nombres = productos.map(p => p.producto__nombre.substring(0, 15));
+        const precios = productos.map(p => parseFloat(p.precio_max));
+        
+        if (nombres.length > 0) {
+            new Chart(document.getElementById('preciosChart'), {
+                type: 'bar',
+                data: {
+                    labels: nombres,
+                    datasets: [{
+                        label: 'Precio Máximo (Bs.)',
+                        data: precios,
+                        backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

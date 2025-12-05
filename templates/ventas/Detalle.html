@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Venta{% endblock %}
+{% block content %}
+<h2>Detalle de la Venta #{{ venta.id }}</h2>
+
+<p><strong>Cliente:</strong> {{ venta.cliente }}</p>
+<p><strong>Empleado:</strong> {{ venta.empleado }}</p>
+<p><strong>Sucursal:</strong> {{ venta.sucursal }}</p>
+<p><strong>Fecha:</strong> {{ venta.fecha }}</p>
+<p><strong>Total:</strong> <span class="text-success fw-bold">Bs {{ venta.total }}</span></p>
+<p><strong>Estado:</strong> {{ venta.estado|title }}</p>
+
+<h4 class="mt-4">🛒 Detalles de Productos</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Descuento (%)</th>
+            <th>Método de Pago</th>
+            <th>Subtotal</th>
+            <th>Ganancia</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in detalles %}
+        <tr>
+            <td>{{ d.producto }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td>Bs {{ d.precio_unitario }}</td>
+            <td>{{ d.descuento }}</td>
+            <td>{{ d.metodo_pago|title }}</td>
+            <td>Bs {{ d.subtotal }}</td>
+            <p><strong>Ganancia estimada:</strong> Bs {{ venta.calcular_ganancia }}</p>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="mt-4">
+    <a href="{% url 'ventas:venta_recibo' venta.id_venta %}" class="btn btn-info">🧾 Ver Recibo</a>
+    <a href="{% url 'ventas:venta_list' %}" class="btn btn-secondary">↩ Volver al Listado</a>
+</div>
+{% endblock %}

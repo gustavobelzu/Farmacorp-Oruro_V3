@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} - Detalles{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .timeline {
+        position: relative;
+        padding-left: 3rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1rem;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background-color: #e9ecef;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background-color: #0d6efd;
+        border: 2px solid #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-box text-primary me-2"></i>{{ producto.nombre }}
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'productos:list' %}">Productos</a></li>
+                    <li class="breadcrumb-item active">Detalles</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'productos:editar' producto.codigo_barras %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Imprimir Ficha
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#historial">
+                            <i class="fas fa-history me-2"></i>Ver Historial
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'productos:eliminar' producto.codigo_barras %}">
+                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-info-circle me-2"></i>Información del Producto
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Datos Básicos</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <span class="text-muted">Código de Barras:</span><br>
+                                    <strong>{{ producto.codigo_barras }}</strong>
+                                </li>
+                                <li class="mb-3">
+                                    <span class="text-muted">Categoría:</span><br>
+                                    <strong>{{ producto.categoria.nombre }}</strong>
+                                </li>
+                                <li class="mb-3">
+                                    <span class="text-muted">Proveedor:</span><br>
+                                    <strong>{{ producto.proveedor.nombre }}</strong>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Precios y Stock</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <span class="text-muted">Precio Unitario:</span><br>
+                                    <strong>Bs {{ producto.precio_unitario|floatformat:2 }}</strong>
+                                </li>
+                                <li class="mb-3">
+                                    <span class="text-muted">Stock Actual:</span><br>
+                                    <strong class="{% if producto.stock <= producto.stock_minimo %}text-danger{% endif %}">
+                                        {{ producto.stock }} unidades
+                                    </strong>
+                                </li>
+                                <li class="mb-3">
+                                    <span class="text-muted">Stock Mínimo:</span><br>
+                                    <strong>{{ producto.stock_minimo }} unidades</strong>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {% if producto.descripcion %}
+                        <div class="col-12">
+                            <h6 class="text-muted mb-2">Descripción</h6>
+                            <p class="mb-0">{{ producto.descripcion }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Movimientos -->
+            <div class="card shadow-sm mt-4" id="historial">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-history me-2"></i>Historial de Movimientos
+                    </h5>
+                    
+                    <div class="timeline">
+                        {% for movimiento in producto.movimientos.all|slice:":10" %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ movimiento.get_tipo_display }}</h6>
+                                            <p class="text-muted mb-0">
+                                                Cantidad: {{ movimiento.cantidad }} unidades
+                                            </p>
+                                        </div>
+                                        <small class="text-muted">
+                                            {{ movimiento.fecha|date:"d/m/Y H:i" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center py-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No hay movimientos registrados
+                        </p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Estadísticas -->
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card stat-card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                        <i class="fas fa-shopping-cart fa-2x"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="card-subtitle mb-1">Ventas Totales</h6>
+                                    <h3 class="card-title mb-0">{{ producto.detalles_ventas.count }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card stat-card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                        <i class="fas fa-dollar-sign fa-2x"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="card-subtitle mb-1">Ingresos Generados</h6>
+                                    <h3 class="card-title mb-0">Bs {{ total_ventas|default:"0.00" }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock por Sucursal -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-store me-2"></i>Stock por Sucursal
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for inventario in producto.inventario_set.all %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ inventario.sucursal.nombre }}</h6>
+                                    <small class="text-muted">{{ inventario.sucursal.ciudad }}</small>
+                                </div>
+                                <span class="badge {% if inventario.cantidad <= producto.stock_minimo %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ inventario.cantidad }}
+                                </span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No hay registros de inventario</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            {% if producto.stock <= producto.stock_minimo %}
+            <div class="card border-danger shadow-sm mt-4">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Alerta de Stock
+                    </h5>
+                    <p class="card-text">
+                        El stock actual está por debajo del mínimo recomendado.
+                        Se sugiere realizar un nuevo pedido.
+                    </p>
+                    <a href="#" class="btn btn-danger">
+                        <i class="fas fa-shopping-cart me-2"></i>Generar Pedido
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+});
+</script>
+{% endblock %}

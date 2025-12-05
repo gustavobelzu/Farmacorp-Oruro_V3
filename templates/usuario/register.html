@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Registro - Farmacorp{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow-lg border-0 rounded-3">
+                <div class="card-header bg-success text-white text-center py-4 border-0">
+                    <img src="{% static 'img/farmacorp_logo.png' %}" alt="Farmacorp Logo" class="mb-3" style="height: 60px;">
+                    <h3 class="fw-normal mb-0">Registro de Usuario</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.email }}
+                                    <label for="{{ form.email.id_for_label }}">
+                                        <i class="fas fa-envelope text-muted me-2"></i>Correo Electrónico
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.username }}
+                                    <label for="{{ form.username.id_for_label }}">
+                                        <i class="fas fa-user text-muted me-2"></i>Nombre de Usuario
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.password1 }}
+                                    <label for="{{ form.password1.id_for_label }}">
+                                        <i class="fas fa-lock text-muted me-2"></i>Contraseña
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.password2 }}
+                                    <label for="{{ form.password2.id_for_label }}">
+                                        <i class="fas fa-lock text-muted me-2"></i>Confirmar Contraseña
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            {{ form.rol }}
+                            <label for="{{ form.rol.id_for_label }}">
+                                <i class="fas fa-user-tag text-muted me-2"></i>Rol
+                            </label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            {{ form.ci_empleado }}
+                            <label for="{{ form.ci_empleado.id_for_label }}">
+                                <i class="fas fa-id-card text-muted me-2"></i>CI Empleado
+                            </label>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            {{ form.ci_cliente }}
+                            <label for="{{ form.ci_cliente.id_for_label }}">
+                                <i class="fas fa-id-card text-muted me-2"></i>CI Cliente
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+                            </button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="text-muted mb-0">
+                                ¿Ya tienes cuenta? 
+                                <a href="{% url 'usuario:login' %}" class="text-success text-decoration-none">
+                                    Inicia sesión aquí
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center border-0 py-3">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-10">
+                            <p class="text-muted small mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Al registrarte, aceptas nuestros términos y condiciones de uso.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Validación del formulario
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+
+    // Añadir clases de Bootstrap a los campos del formulario
+    document.addEventListener('DOMContentLoaded', function() {
+        const formFields = [
+            'email', 'username', 'password1', 'password2', 'rol', 'ci_empleado', 'ci_cliente'
+        ];
+        
+        formFields.forEach(field => {
+            const element = document.getElementById('id_' + field);
+            if (element) {
+                element.classList.add('form-control');
+                if (field.startsWith('password')) {
+                    element.setAttribute('placeholder', '••••••••');
+                }
+            }
+        });
+
+        // Deshabilitar campos según el rol seleccionado
+        const rolSelect = document.getElementById('id_rol');
+        const ciEmpleadoField = document.getElementById('id_ci_empleado');
+        const ciClienteField = document.getElementById('id_ci_cliente');
+
+        function updateFields() {
+            const selectedRole = rolSelect.value;
+            if (selectedRole === 'cliente') {
+                ciEmpleadoField.disabled = true;
+                ciClienteField.disabled = false;
+            } else if (selectedRole === 'empleado' || selectedRole === 'administrador') {
+                ciEmpleadoField.disabled = false;
+                ciClienteField.disabled = true;
+            } else {
+                ciEmpleadoField.disabled = false;
+                ciClienteField.disabled = false;
+            }
+        }
+
+        if (rolSelect && ciEmpleadoField && ciClienteField) {
+            rolSelect.addEventListener('change', updateFields);
+            updateFields(); // Ejecutar al cargar
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

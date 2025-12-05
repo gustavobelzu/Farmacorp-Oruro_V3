@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Sucursales{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-store me-2"></i>Gestión de Sucursales
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Sucursales</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'farmacia:createf' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nueva Sucursal
+            </a>
+            <button class="btn btn-outline-primary" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-store me-2"></i>Nombre
+                    </label>
+                    <input type="text" class="form-control" id="filterNombre" placeholder="Buscar por nombre...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-map-marker-alt me-2"></i>Departamento
+                    </label>
+                    <select class="form-select" id="filterDepartamento">
+                        <option value="">Todos los departamentos</option>
+                        <option value="La Paz">La Paz</option>
+                        <option value="Cochabamba">Cochabamba</option>
+                        <option value="Santa Cruz">Santa Cruz</option>
+                        <option value="Oruro">Oruro</option>
+                        <option value="Potosí">Potosí</option>
+                        <option value="Sucre">Sucre</option>
+                        <option value="Tarija">Tarija</option>
+                        <option value="Beni">Beni</option>
+                        <option value="Pando">Pando</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-clinic-medical me-2"></i>Farmacia
+                    </label>
+                    <input type="text" class="form-control" id="filterFarmacia" placeholder="Buscar por farmacia...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Total Sucursales</h6>
+                            <h3 class="mb-0">{{ sucursales.count }}</h3>
+                        </div>
+                        <i class="fas fa-store fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Empleados</h6>
+                            <h3 class="mb-0">{{ total_empleados|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Departamentos</h6>
+                            <h3 class="mb-0">{{ total_departamentos|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-map-marked-alt fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Ventas del Mes</h6>
+                            <h3 class="mb-0">{{ ventas_mes|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="sucursalesTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Sucursal</th>
+                            <th>Ubicación</th>
+                            <th>Contacto</th>
+                            <th>Estado</th>
+                            <th>Farmacia</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sucursales %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-store text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ s.nombre }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ s.horario }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+                                    {{ s.direccion }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="fas fa-map me-1"></i>{{ s.departamento }}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>
+                                    {{ s.email }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="fas fa-hashtag me-1"></i>NIT: {{ s.nit }}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Activa
+                                </span>
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="fas fa-clinic-medical me-2 text-primary"></i>
+                                    {{ s.farmacia.nombre_farmacia }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group dropstart">
+                                    <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'farmacia:update' s.id_sucursal %}">
+                                                <i class="fas fa-edit text-warning me-2"></i>Editar
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" 
+                                               onclick="confirmDelete('{% url 'farmacia:delete' s.id_sucursal %}')">
+                                                <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="showDetails({{ s.id_sucursal }})">
+                                                <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-store fa-3x mb-3"></i>
+                                    <h5 class="mb-0">No hay sucursales registradas</h5>
+                                    <p class="mb-0">Registra una nueva sucursal para comenzar</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar esta sucursal?</p>
+                <p class="text-danger">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta acción eliminará todos los datos asociados a la sucursal.
+                    </small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles de la Sucursal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="sucursalDetails">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const table = new DataTable('#sucursalesTable', {
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        responsive: true,
+        dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center"ip>',
+        pageLength: 10,
+    });
+
+    // Confirm Delete Function
+    window.confirmDelete = function(deleteUrl) {
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    };
+
+    // Show Details Function
+    window.showDetails = async function(sucursalId) {
+        const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        const content = document.getElementById('sucursalDetails');
+        content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/sucursal/${sucursalId}/details/`);
+            if (!response.ok) throw new Error('Error al cargar los detalles');
+            const data = await response.json();
+            
+            content.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-store me-2"></i>Información General
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Nombre:</strong> ${data.nombre}</li>
+                                    <li><strong>Departamento:</strong> ${data.departamento}</li>
+                                    <li><strong>Dirección:</strong> ${data.direccion}</li>
+                                    <li><strong>Horario:</strong> ${data.horario}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>Detalles Comerciales
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>NIT:</strong> ${data.nit}</li>
+                                    <li><strong>Email:</strong> ${data.email}</li>
+                                    <li><strong>Farmacia:</strong> ${data.farmacia}</li>
+                                    <li><strong>Fecha Registro:</strong> ${data.fecha_registro}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <i class="fas fa-chart-bar me-2"></i>Estadísticas
+                        </h6>
+                        <div class="row">
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="mb-1">${data.stats.empleados}</h3>
+                                    <small class="text-muted">Empleados</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="mb-1">${data.stats.ventas}</h3>
+                                    <small class="text-muted">Ventas</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="mb-1">${data.stats.productos}</h3>
+                                    <small class="text-muted">Productos</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="mb-1">${data.stats.clientes}</h3>
+                                    <small class="text-muted">Clientes</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        } catch (error) {
+            content.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error al cargar los detalles: ${error.message}
+                </div>`;
+        }
+    };
+
+    // Export to Excel
+    document.getElementById('exportExcel').addEventListener('click', function() {
+        const workbook = XLSX.utils.table_to_book(document.getElementById('sucursalesTable'));
+        XLSX.writeFile(workbook, 'Sucursales_' + new Date().toISOString().split('T')[0] + '.xlsx');
+    });
+
+    // Filter Form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+
+        // Real-time filtering
+        document.querySelectorAll('#filterForm input, #filterForm select').forEach(element => {
+            element.addEventListener('input', applyFilters);
+        });
+    }
+
+    // Apply filters function
+    function applyFilters() {
+        const nombre = document.getElementById('filterNombre').value.toLowerCase();
+        const departamento = document.getElementById('filterDepartamento').value;
+        const farmacia = document.getElementById('filterFarmacia').value.toLowerCase();
+
+        table.search('').columns().search('').draw();
+
+        if (nombre) table.column(0).search(nombre);
+        if (departamento) table.column(1).search(departamento);
+        if (farmacia) table.column(4).search(farmacia);
+
+        table.draw();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

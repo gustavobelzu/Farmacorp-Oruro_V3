@@ -1,0 +1,448 @@
+﻿{% extends "base.html" %}
+{% block title %}Gestión de Recetas{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-prescription me-2"></i>Gestión de Recetas
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Recetas</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'recetas:create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nueva Receta
+            </a>
+            <button class="btn btn-outline-primary" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-user me-2"></i>Cliente
+                    </label>
+                    <input type="text" class="form-control" id="filterCliente" placeholder="Buscar cliente...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar me-2"></i>Fecha
+                    </label>
+                    <input type="date" class="form-control" id="filterFecha">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-user-md me-2"></i>Médico
+                    </label>
+                    <input type="text" class="form-control" id="filterMedico" placeholder="Buscar médico...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Total Recetas</h6>
+                            <h3 class="mb-0">{{ recetas.count }}</h3>
+                        </div>
+                        <i class="fas fa-prescription fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Recetas del Mes</h6>
+                            <h3 class="mb-0">{{ recetas_mes|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Medicamentos</h6>
+                            <h3 class="mb-0">{{ total_medicamentos|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-pills fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">Médicos Activos</h6>
+                            <h3 class="mb-0">{{ medicos_activos|default:"0" }}</h3>
+                        </div>
+                        <i class="fas fa-user-md fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="recetasTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Paciente</th>
+                            <th>Médico</th>
+                            <th>Medicamento</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receta in recetas %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ receta.cliente.nombre }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-id-card me-1"></i>ID: {{ receta.id_receta }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="fas fa-user-md me-2 text-primary"></i>
+                                    {{ receta.Matricula_medico }}
+                                </span>
+                                <small class="text-muted">
+                                    Atendido por: {{ receta.empleado.nombre }}
+                                </small>
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-pills me-1"></i>{{ receta.Medicamento }}
+                                    </span>
+                                    <span class="d-block mt-1">
+                                        <strong>{{ receta.Cantidad }}</strong>
+                                        <small class="text-muted">unidades</small>
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if receta.Cantidad > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Dispensada
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Pendiente
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="d-block">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ receta.fecha_emision|date:"d/m/Y" }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ receta.fecha|date:"d/m/Y" }}  
+                                </small>
+                            </td>
+                            <td class="text-end pe-4">
+
+                                <div class="btn-group dropstart">
+                                    <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" >
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'recetas:editar' receta.id_receta %}">
+                                                <i class="fas fa-edit text-warning me-2"></i>Editar
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger btn-delete" href="#" 
+                                               data-delete-url="{% url 'recetas:eliminar' receta.id_receta %}" onclick="return false;">
+                                                <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'recetas:detalle' receta.id_receta %}">
+                                                <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item btn-print" href="#" data-receta-id="{{ receta.id_receta }}" onclick="return false;">
+                                                <i class="fas fa-print me-2"></i>Imprimir
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-prescription fa-3x mb-3"></i>
+                                    <h5 class="mb-0">No hay recetas registradas</h5>
+                                    <p class="mb-0">Registra una nueva receta para comenzar</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar esta receta?</p>
+                <p class="text-danger">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta acción es irreversible y eliminará todos los datos asociados.
+                    </small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles de la Receta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="recetaDetails">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const table = new DataTable('#recetasTable', {
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        responsive: true,
+        dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center"ip>',
+        pageLength: 10,
+        order: [[4, 'desc']], // Order by date by default
+    });
+
+    // Confirm Delete Function
+    window.confirmDelete = function(deleteUrl) {
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    };
+
+    // Show Details Function
+    window.showDetails = async function(recetaId) {
+        const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        const content = document.getElementById('recetaDetails');
+        content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/receta/${recetaId}/details/`);
+            if (!response.ok) throw new Error('Error al cargar los detalles');
+            const data = await response.json();
+            
+            content.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-user me-2"></i>Información del Paciente
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Nombre:</strong> ${data.cliente.nombre}</li>
+                                    <li><strong>ID:</strong> ${data.cliente.id}</li>
+                                    <li><strong>Teléfono:</strong> ${data.cliente.telefono || 'No especificado'}</li>
+                                    <li><strong>Email:</strong> ${data.cliente.email || 'No especificado'}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-prescription me-2"></i>Detalles de la Receta
+                                </h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li><strong>Medicamento:</strong> ${data.medicamento}</li>
+                                    <li><strong>Cantidad:</strong> ${data.cantidad} unidades</li>
+                                    <li><strong>Médico:</strong> ${data.medico}</li>
+                                    <li><strong>Fecha:</strong> ${data.fecha}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <i class="fas fa-notes-medical me-2"></i>Instrucciones
+                        </h6>
+                        <p class="mb-0">${data.instrucciones || 'No se especificaron instrucciones.'}</p>
+                    </div>
+                </div>`;
+        } catch (error) {
+            content.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error al cargar los detalles: ${error.message}
+                </div>`;
+        }
+    };
+
+    // Print Function
+    window.printReceta = async function(recetaId) {
+        try {
+            const response = await fetch(`/api/receta/${recetaId}/print/`);
+            if (!response.ok) throw new Error('Error al generar la receta');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `receta_${recetaId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            alert('Error al imprimir la receta: ' + error.message);
+        }
+    };
+
+    // Export to Excel
+    document.getElementById('exportExcel').addEventListener('click', function() {
+        const workbook = XLSX.utils.table_to_book(document.getElementById('recetasTable'));
+        XLSX.writeFile(workbook, 'Recetas_' + new Date().toISOString().split('T')[0] + '.xlsx');
+    });
+
+    // Event listeners para botones de acciones
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const deleteUrl = this.getAttribute('data-delete-url');
+            confirmDelete(deleteUrl);
+        });
+    });
+
+    document.querySelectorAll('.btn-details').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const recetaId = this.getAttribute('data-receta-id');
+            showDetails(recetaId);
+        });
+    });
+
+    document.querySelectorAll('.btn-print').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const recetaId = this.getAttribute('data-receta-id');
+            printReceta(recetaId);
+        });
+    });
+
+    // Filter Form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+
+        // Real-time filtering
+        document.querySelectorAll('#filterForm input, #filterForm select').forEach(element => {
+            element.addEventListener('input', applyFilters);
+        });
+    }
+
+    // Apply filters function
+    function applyFilters() {
+        const cliente = document.getElementById('filterCliente').value.toLowerCase();
+        const fecha = document.getElementById('filterFecha').value;
+        const medico = document.getElementById('filterMedico').value.toLowerCase();
+
+        table.search('').columns().search('').draw();
+
+        if (cliente) table.column(0).search(cliente);
+        if (fecha) table.column(4).search(fecha);
+        if (medico) table.column(1).search(medico);
+
+        table.draw();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

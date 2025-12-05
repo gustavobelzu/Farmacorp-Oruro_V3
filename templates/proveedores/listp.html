@@ -1,0 +1,335 @@
+﻿{% extends "base.html" %}
+{% block title %}Gestión de Proveedores{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                <i class="fas fa-truck me-2"></i>Gestión de Proveedores
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item active">Proveedores</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'productos:proveedor_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nuevo Proveedor
+            </a>
+            <button class="btn btn-outline-primary" id="exportExcel">
+                <i class="fas fa-file-excel me-2"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3" id="filterForm">
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-search me-2"></i>Nombre/Empresa
+                    </label>
+                    <input type="text" class="form-control" id="filterNombre" placeholder="Buscar proveedor...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-envelope me-2"></i>Email
+                    </label>
+                    <input type="email" class="form-control" id="filterEmail" placeholder="Buscar por email...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="fas fa-toggle-on me-2"></i>Estado
+                    </label>
+                    <select class="form-select" id="filterEstado">
+                        <option value="">Todos</option>
+                        <option value="true">Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="proveedoresTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Proveedor</th>
+                            <th>Contacto</th>
+                            <th>Productos</th>
+                            <th>Estado</th>
+                            <th>Registro</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proveedor in proveedores %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-building text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ proveedor.nombre }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ proveedor.direccion|truncatechars:30 }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <span class="d-block">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>{{ proveedor.email }}
+                                    </span>
+                                    <span class="d-block">
+                                        <i class="fas fa-phone me-2 text-muted"></i>{{ proveedor.telefono }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ proveedor.productos.count }} productos
+                                </span>
+                            </td>
+                            <td>
+                                {% if proveedor.estado %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Inactivo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ proveedor.fecha_registro|date:"d/m/Y" }}
+                                </small>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'productos:editarp' proveedor.id_proveedor %}">
+                                                <i class="fas fa-edit text-warning me-2"></i>Editar
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" 
+                                               onclick="confirmDelete('{% url 'productos:eliminarp' proveedor.id_proveedor %}')">
+                                                <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" 
+                                               onclick="showProducts('{{ proveedor.id_proveedor }}')">
+                                                <i class="fas fa-box me-2"></i>Ver Productos
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center p-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-box fa-3x mb-3"></i>
+                                    <h5 class="mb-0">No hay proveedores registrados</h5>
+                                    <p class="mb-0">Registra un nuevo proveedor para comenzar</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar este proveedor?</p>
+                <p class="text-danger">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta acción eliminará el proveedor y su relación con los productos asociados.
+                    </small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Products Modal -->
+<div class="modal fade" id="productsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Productos del Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="productsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const table = new DataTable('#proveedoresTable', {
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        responsive: true,
+        dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center"ip>',
+        pageLength: 10,
+        order: [[4, 'desc']], // Order by registration date by default
+    });
+
+    // Confirm Delete Function
+    window.confirmDelete = function(deleteUrl) {
+        document.getElementById('confirmDeleteBtn').href = deleteUrl;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    };
+
+    // Show Products Function
+    window.showProducts = async function(proveedorId) {
+        const modal = new bootstrap.Modal(document.getElementById('productsModal'));
+        const content = document.getElementById('productsContent');
+        content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/proveedor/${proveedorId}/productos/`);
+            if (!response.ok) throw new Error('Error al cargar los productos');
+            const data = await response.json();
+            
+            if (data.productos && data.productos.length > 0) {
+                content.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th>Stock</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.productos.map(prod => `
+                                    <tr>
+                                        <td>${prod.codigo_barras}</td>
+                                        <td>${prod.nombre}</td>
+                                        <td>${prod.stock}</td>
+                                        <td>$${prod.precio_unitario}</td>
+                                        <td>
+                                            <span class="badge bg-${prod.estado ? 'success' : 'danger'}">
+                                                ${prod.estado ? 'Activo' : 'Inactivo'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Este proveedor no tiene productos registrados.
+                    </div>`;
+            }
+        } catch (error) {
+            content.innerHTML = `
+                <div class="alert alert-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error al cargar los productos: ${error.message}
+                </div>`;
+        }
+    };
+
+    // Export to Excel
+    document.getElementById('exportExcel').addEventListener('click', function() {
+        const workbook = XLSX.utils.table_to_book(document.getElementById('proveedoresTable'));
+        XLSX.writeFile(workbook, 'Proveedores_' + new Date().toISOString().split('T')[0] + '.xlsx');
+    });
+
+    // Filter Form
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            applyFilters();
+        });
+
+        // Real-time filtering
+        document.querySelectorAll('#filterForm input, #filterForm select').forEach(element => {
+            element.addEventListener('input', applyFilters);
+        });
+    }
+
+    // Apply filters function
+    function applyFilters() {
+        const nombre = document.getElementById('filterNombre').value.toLowerCase();
+        const email = document.getElementById('filterEmail').value.toLowerCase();
+        const estado = document.getElementById('filterEstado').value;
+
+        table.search('').columns().search('').draw();
+
+        if (nombre) table.column(0).search(nombre);
+        if (email) table.column(1).search(email);
+        if (estado !== '') {
+            table.column(3).search(estado === 'true' ? 'Activo' : 'Inactivo');
+        }
+
+        table.draw();
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

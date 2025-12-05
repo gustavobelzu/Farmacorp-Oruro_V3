@@ -1,0 +1,359 @@
+﻿{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Sistema de gestión de farmacias Farmacorp">
+    <meta name="theme-color" content="#198754">
+    <title>{% block title %}Farmacorp{% endblock %} | Sistema de Gestión</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    
+    <!-- Bootstrap y FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- Choices.js -->
+    <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- XLSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Choices.js -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script defer src="{% static 'js/alertas.js' %}"></script>
+    <script defer src="{% static 'js/chart.js' %}"></script>
+    
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <!-- Global fix: allow dropdowns inside scrollable tables to overflow (avoid being cut off) -->
+    <style>
+        
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        
+        .table-responsive .dropdown-menu {
+            position: fixed;
+            z-index: 2050; /* above default Bootstrap modals/toasts */
+            min-width: 10rem;
+        }
+
+       
+        .table-responsive .dropstart .dropdown-menu,
+        .table-responsive .dropend .dropdown-menu,
+        .table-responsive .dropup .dropdown-menu {
+            position: fixed;
+            z-index: 2050;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-light">
+    
+    <!-- NAVBAR SUPERIOR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm fixed-top">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'usuario:dashboard' %}">
+                <img src="{% static 'img/farmacorp_logo.png' %}" alt="Farmacorp" height="40" class="me-2">
+                <strong>Farmacorp</strong>
+            </a>
+
+            <!-- Botón hamburguesa para móviles -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Menú colapsable -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                {% if user.is_authenticated %}
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Gestión -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-2"></i>Gestión
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'clientes:list' %}">
+                                <i class="fas fa-user me-2"></i>Clientes
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'empleados:list' %}">
+                                <i class="fas fa-id-card me-2"></i>Empleados
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'usuario:list' %}">
+                                <i class="fas fa-user-shield me-2"></i>Usuarios
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Inventario -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-box me-2"></i>Inventario
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'productos:list' %}">
+                                <i class="fas fa-pills me-2"></i>Productos
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'productos:listp' %}">
+                                <i class="fas fa-truck me-2"></i>Proveedores
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'inventario:list' %}">
+                                <i class="fas fa-warehouse me-2"></i>Stock
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'productos:listc' %}">
+                                <i class="fas fa-shopping-cart me-2"></i>Compras
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Ventas -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-cash-register me-2"></i>Ventas
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'ventas:venta_list' %}">
+                                <i class="fas fa-list me-2"></i>Lista de Ventas
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'recetas:list' %}">
+                                <i class="fas fa-prescription me-2"></i>Recetas
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Administración -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-building me-2"></i>Administración
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'farmacia:list' %}">
+                                <i class="fas fa-clinic-medical me-2"></i>Farmacias
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'farmacia:listf' %}">
+                                <i class="fas fa-store me-2"></i>Sucursales
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'reportes:list' %}">
+                                <i class="fas fa-chart-bar me-2"></i>Reportes
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- Alertas y Usuario -->
+                <ul class="navbar-nav">
+                    <!-- Alertas -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="{% url 'alertas:list' %}">
+                            <i class="fas fa-bell"></i>
+                            <span id="alertCount" class="badge bg-danger rounded-pill">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end alert-dropdown" id="alertList">
+                            <li><span class="dropdown-item text-muted">Cargando alertas...</span></li>
+                        </ul>
+                    </li>
+
+                    <!-- Usuario -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2"></i>{{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">
+                                <i class="fas fa-user-cog me-2"></i>Perfil
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'usuario:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Espaciador para el navbar fijo -->
+    <div class="pt-5 mt-4"></div>
+
+    <!-- Mensajes Flash -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CONTENIDO -->
+    <main class="container py-4">
+        <!-- Breadcrumb -->
+        {% block breadcrumb %}{% endblock %}
+        
+        <!-- Título de la página -->
+        {% block page_title %}{% endblock %}
+        
+        <!-- Contenido principal -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER 
+    <footer class="footer bg-success text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-clinic-medical me-2"></i>Farmacorp</h5>
+                    <p class="small">Sistema integral de gestión farmacéutica</p>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-link me-2"></i>Enlaces Útiles</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-white">Manual de Usuario</a></li>
+                        <li><a href="#" class="text-white">Soporte Técnico</a></li>
+                        <li><a href="#" class="text-white">Política de Privacidad</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-headset me-2"></i>Contacto</h5>
+                    <p class="small">
+                        <i class="fas fa-phone me-2"></i>+591 2 123456<br>
+                        <i class="fas fa-envelope me-2"></i>soporte@farmacorp.com
+                    </p>
+                </div>
+            </div>
+            <hr class="my-3 bg-light">
+            <div class="row">
+                <div class="col text-center">
+                    <p class="small mb-0">&copy; 2025 Farmacorp — Todos los derechos reservados</p>
+                </div>
+            </div>
+        </div>
+    </footer> -->
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Toast para notificaciones -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-bell me-2"></i>
+                <strong class="me-auto">Notificación</strong>
+                <small class="text-muted">ahora</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body"></div>
+        </div>
+    </div>
+
+    <!-- Alertas en tiempo real -->
+    <script>
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            const toast = document.getElementById('notificationToast');
+            const toastBody = toast.querySelector('.toast-body');
+            toastBody.textContent = message;
+            toast.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
+            toast.classList.add(`bg-${type}`);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+
+        // Cargar alertas
+        async function cargarAlertas() {
+            try {
+                const response = await fetch("{% url 'alertas:api_alertas' %}");
+                if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                
+                const data = await response.json();
+                const prevCount = parseInt(document.getElementById("alertCount").innerText) || 0;
+
+                // Actualizar contador
+                document.getElementById("alertCount").innerText = data.count;
+
+                // Mostrar nuevas alertas si hay más que antes
+                if (data.count > prevCount) {
+                    showNotification(`Tienes ${data.count - prevCount} nueva(s) alerta(s)`, 'warning');
+                }
+
+                // Actualizar lista
+                const alertList = document.getElementById("alertList");
+                alertList.innerHTML = "";
+                
+                if (data.alertas && data.alertas.length > 0) {
+                    data.alertas.forEach(alerta => {
+                        const li = document.createElement("li");
+                        const icon = getAlertIcon(alerta.tipo);
+                        li.innerHTML = `
+                            <a class="dropdown-item" href="{% url 'alertas:list' %}">
+                                <i class="${icon} me-2"></i>
+                                <strong>${alerta.tipo}</strong>: 
+                                ${alerta.descripcion}
+                                <small class="text-muted d-block">${alerta.producto}</small>
+                            </a>`;
+                        alertList.appendChild(li);
+                    });
+                } else {
+                    alertList.innerHTML = `
+                        <li><span class="dropdown-item text-muted">
+                            <i class="fas fa-check-circle me-2"></i>No hay alertas
+                        </span></li>`;
+                }
+            } catch (error) {
+                console.error("Error cargando alertas:", error);
+                showNotification("Error al cargar alertas", 'danger');
+            }
+        }
+
+        // Obtener ícono según tipo de alerta
+        function getAlertIcon(tipo) {
+            const iconos = {
+                'stock': 'fas fa-box',
+                'vencimiento': 'fas fa-calendar-times',
+                'precio': 'fas fa-tags',
+                'default': 'fas fa-exclamation-circle'
+            };
+            return iconos[tipo.toLowerCase()] || iconos.default;
+        }
+
+        // Iniciar sistema de alertas
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarAlertas();
+            setInterval(cargarAlertas, 30000); // Actualizar cada 30 segundos
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+

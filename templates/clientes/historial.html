@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% load static %}
+{% load cliente_filters %}
+
+{% block title %}Mi Historial - Farmacorp{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.timeline-item {
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 1.5rem;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background-color: #e9ecef;
+}
+.timeline-marker {
+    position: absolute;
+    left: -0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    border: 2px solid #fff;
+}
+.prescription-card {
+    transition: all 0.3s;
+}
+.prescription-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">
+                {% if es_cliente %}
+                    <i class="fas fa-history me-2"></i>Mi Historial
+                {% else %}
+                    <i class="fas fa-user me-2"></i>Historial de {{ cliente.nombre }}
+                {% endif %}
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    {% if not es_cliente %}
+                        <li class="breadcrumb-item"><a href="{% url 'clientes:list' %}">Clientes</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item active">Historial</li>
+                </ol>
+            </nav>
+        </div>
+        {% if es_cliente %}
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Imprimir Historial
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded p-3">
+                                <i class="fas fa-shopping-bag fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Total Compras</h6>
+                            <h3 class="card-title mb-0">Bs {{ total_gastado|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon bg-success bg-opacity-10 text-success rounded p-3">
+                                <i class="fas fa-pills fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Productos Comprados</h6>
+                            <h3 class="card-title mb-0">{{ total_productos }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon bg-info bg-opacity-10 text-info rounded p-3">
+                                <i class="fas fa-prescription fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Recetas Activas</h6>
+                            <h3 class="card-title mb-0">{{ recetas.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded p-3">
+                                <i class="fas fa-star fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">Puntos Acumulados</h6>
+                            <h3 class="card-title mb-0">{{ total_gastado|divide:100|floatformat:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row g-4">
+        <!-- Historial de Compras -->
+        <div class="col-xl-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>Historial de Compras
+                        </h5>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-primary btn-sm active">Todo</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm">Último Mes</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm">Último Año</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Productos</th>
+                                    <th>Sucursal</th>
+                                    <th class="text-end">Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in ventas %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded p-2 me-2">
+                                                <i class="fas fa-shopping-bag text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ v.fecha|date:"d/m/Y" }}</div>
+                                                <small class="text-muted">{{ v.fecha|time:"H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            {% for d in v.detalles.all|slice:":3" %}
+                                                {{ d.producto.nombre }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                            {% if v.detalles.count > 3 %}
+                                                y {{ v.detalles.count|add:"-3" }} más
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="d-block">{{ v.sucursal.nombre }}</span>
+                                        <small class="text-muted">{{ v.sucursal.ciudad }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="fw-bold">Bs {{ v.total|floatformat:2 }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'ventas:venta_recibo' v.id_venta %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                                            <p class="mb-0">No hay compras registradas</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-xl-4">
+            <!-- Recetas Activas -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-prescription-bottle-alt me-2"></i>Recetas Activas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for r in recetas %}
+                    <div class="prescription-card card mb-3 {% if not r.activa %}bg-light{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">{{ r.medicamento }}</h6>
+                                    <p class="card-text small mb-0">
+                                        <i class="fas fa-user-md me-1 text-primary"></i>
+                                        Dr. {{ r.matricula_medico }}
+                                    </p>
+                                    <p class="card-text small mb-0">
+                                        <i class="fas fa-calendar me-1 text-muted"></i>
+                                        {{ r.fecha_emision|date:"d/m/Y" }}
+                                    </p>
+                                </div>
+                                <span class="badge {% if r.activa %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if r.activa %}Activa{% else %}Vencida{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-prescription-bottle fa-2x mb-2"></i>
+                            <p class="mb-0">No hay recetas activas</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Gráfico de Ventas -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Historial de Compras
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="height: 300px;">
+                        <canvas id="ventasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productos Frecuentes -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>Productos Frecuentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for p in productos_frecuentes %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-light p-2">
+                                <i class="fas fa-pills text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">{{ p.detalles__producto__nombre }}</h6>
+                            <small class="text-muted">{{ p.total }} unidades compradas</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-box-open fa-2x mb-2"></i>
+                            <p class="mb-0">Aún no hay productos frecuentes</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos para el gráfico de ventas por mes
+    const ventasPorMes = JSON.parse('{{ ventas_por_mes|escapejs }}');
+    const labels = ventasPorMes.map(function(v) {
+        const fecha = new Date(v.mes);
+        return fecha.toLocaleDateString('es', { month: 'short', year: 'numeric' });
+    });
+    const data = ventasPorMes.map(function(v) {
+        return v.total;
+    });
+
+    // Crear gráfico si hay datos
+    try {
+        if (ventasPorMes && ventasPorMes.length > 0) {
+            const chartElement = document.getElementById('ventasChart');
+            if (chartElement) {
+                const ctx = chartElement.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total de Compras',
+                            data: data,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Bs ' + context.parsed.y.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return 'Bs ' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error al crear el gráfico:', error);
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

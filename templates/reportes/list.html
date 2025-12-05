@@ -1,0 +1,390 @@
+﻿{% extends "base.html" %}
+{% block title %}Reportes y Análisis{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="display-6 mb-0">
+                <i class="fas fa-chart-bar text-primary me-2"></i>Reportes y Análisis
+            </h2>
+            <p class="text-muted mt-2 mb-0">Gestión y visualización de informes</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'reportes:Dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nuevo Reporte
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-download me-2"></i>Exportar
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Excel</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>PDF</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Imprimir</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Total Reportes</h6>
+                            <h3 class="card-title mb-0">{{ total_reportes|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Ventas del Mes</h6>
+                            <h3 class="card-title mb-0">{{ reportes_ventas|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Inventario</h6>
+                            <h3 class="card-title mb-0">{{ reportes_inventario|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Alertas Activas</h6>
+                            <h3 class="card-title mb-0">{{ reportes_alertas|default:"0" }}</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                            <i class="fas fa-bell fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes Rápidos -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'reportes:ganancias_sin_perdidas' %}" class="btn btn-success btn-lg w-100 py-4">
+                <div class="text-start">
+                    <i class="fas fa-chart-line fa-2x mb-2 d-block"></i>
+                    <h6 class="mb-0">Ganancias sin Pérdidas</h6>
+                    <small class="text-white-50">Análisis de rentabilidad</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'reportes:producto_mas_caro' %}" class="btn btn-warning btn-lg w-100 py-4">
+                <div class="text-start text-dark">
+                    <i class="fas fa-gem fa-2x mb-2 d-block"></i>
+                    <h6 class="mb-0">Producto Más Caro</h6>
+                    <small class="text-dark-50">Precio máximo vendido</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'reportes:ganancias' %}" class="btn btn-info btn-lg w-100 py-4">
+                <div class="text-start">
+                    <i class="fas fa-dollar-sign fa-2x mb-2 d-block"></i>
+                    <h6 class="mb-0">Ganancias Totales</h6>
+                    <small class="text-white-50">Ingresos netos</small>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'reportes:Dashboard' %}" class="btn btn-primary btn-lg w-100 py-4">
+                <div class="text-start">
+                    <i class="fas fa-tachometer-alt fa-2x mb-2 d-block"></i>
+                    <h6 class="mb-0">Dashboard</h6>
+                    <small class="text-white-50">Panel general</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="Buscar reporte..." id="searchReport">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterTipo">
+                        <option value="">Tipo de Reporte</option>
+                        <option value="ventas">Ventas</option>
+                        <option value="inventario">Inventario</option>
+                        <option value="alertas">Alertas</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="filterSucursal">
+                        <option value="">Sucursal</option>
+                        {% for sucursal in sucursales %}
+                        <option value="{{ sucursal.id_sucursal }}">{{ sucursal.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-calendar text-muted"></i>
+                        </span>
+                        <input type="date" class="form-control" id="filterDate">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" id="applyFilters">
+                        <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Sucursal</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rep in reportes %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="{{ rep.id_Reporte }}">
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">#{{ rep.id_Reporte }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="far fa-calendar me-2 text-muted"></i>
+                                {{ rep.Fecha_Reporte|date:"d/m/Y" }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if rep.Categoria == 'INVENTARIO' %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-boxes me-1"></i>Inventario
+                                </span>
+                            {% elif rep.Categoria == 'ALERTAS' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-bell me-1"></i>Alertas
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-chart-line me-1"></i>Ventas
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-store me-2 text-muted"></i>
+                                {{ rep.Sucursal.nombre }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">Completado</span>
+                        </td>
+                        <td>
+                            <div class="btn-group dropstart">
+                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'reportes:editar' rep.id_Reporte %}">
+                                            <i class="fas fa-eye me-2 text-primary"></i>Ver detalles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'reportes:editar' rep.id_Reporte %}">
+                                            <i class="fas fa-edit me-2 text-warning"></i>Editar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-download me-2 text-success"></i>Descargar
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'reportes:eliminar' rep.id_Reporte %}">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                <h5>No hay reportes disponibles</h5>
+                                <p class="mb-0">Comienza creando un nuevo reporte</p>
+                                <a href="{% url 'reportes:Dashboard' %}" class="btn btn-primary mt-3">
+                                    <i class="fas fa-plus me-2"></i>Crear Reporte
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if reportes.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if reportes.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ reportes.previous_page_number }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in reportes.paginator.page_range %}
+                {% if reportes.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if reportes.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ reportes.next_page_number }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchReport');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            }, 300);
+        });
+    }
+
+    // Seleccionar todos los checkboxes
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('tbody .form-check-input');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+
+    // Actualizar acciones en masa
+    function updateBulkActions() {
+        const selectedCount = document.querySelectorAll('tbody .form-check-input:checked').length;
+        const bulkActionsBtn = document.querySelector('.bulk-actions');
+        
+        if (bulkActionsBtn) {
+            if (selectedCount > 0) {
+                bulkActionsBtn.classList.remove('d-none');
+                bulkActionsBtn.querySelector('.count').textContent = selectedCount;
+            } else {
+                bulkActionsBtn.classList.add('d-none');
+            }
+        }
+    }
+
+    // Filtros
+    document.getElementById('applyFilters')?.addEventListener('click', function() {
+        // Aquí iría la lógica de filtrado
+        console.log('Aplicando filtros...');
+    });
+
+    // Tooltips
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(tooltip => {
+        new bootstrap.Tooltip(tooltip);
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

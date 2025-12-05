@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Farmacorp{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card {
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.menu-item {
+    position: relative;
+    transition: all 0.3s;
+    border-radius: 0;
+    border-left: 4px solid transparent;
+}
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-left: 4px solid #fff;
+}
+.menu-item.active {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-left: 4px solid #fff;
+}
+.quick-action {
+    transition: all 0.3s;
+}
+.quick-action:hover {
+    transform: scale(1.05);
+}
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 999px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar Moderno -->
+    <div class="border-end bg-gradient text-white" id="sidebar-wrapper" 
+         style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+        <div class="sidebar-heading text-center py-4">
+            <img src="{% static 'img/farmacorp_logo.png' %}" alt="Farmacorp Logo" width="150" class="img-fluid">
+        </div>
+
+        <div class="list-group list-group-flush"
+            {% if user.rol == "administrador" %}
+                <a href="{% url 'clientes:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Clientes</a>
+                <a href="{% url 'empleados:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Empleados</a>
+                <a href="{% url 'productos:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Productos</a>
+                <a href="{% url 'productos:listp' %}" class="list-group-item list-group-item-action bg-primary text-white">Proveedores</a>
+                <a href="{% url 'inventario:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Inventario</a>
+                <a href="{% url 'ventas:venta_list' %}" class="list-group-item list-group-item-action bg-primary text-white">Ventas</a>
+                <a href="{% url 'reportes:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Reportes</a>
+                <a href="{% url 'alertas:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Alertas</a>
+                <a href="{% url 'usuario:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Usuarios</a>
+                <a href="{% url 'farmacia:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Farmacia</a>
+                <a href="{% url 'farmacia:listf' %}" class="list-group-item list-group-item-action bg-primary text-white">Sucursal</a>
+
+
+
+            {% elif user.rol == "farmaceutico" %}
+                <a href="{% url 'ventas:venta_list' %}" class="list-group-item list-group-item-action bg-primary text-white">Ventas</a>
+                <a href="{% url 'recetas:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Recetas</a>
+                <a href="{% url 'alertas:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Alertas</a>
+
+            {% elif user.rol == "encargado_almacen" %}
+                <a href="{% url 'productos:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Productos</a>
+                <a href="{% url 'inventario:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Inventario</a>
+                <a href="{% url 'alertas:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Alertas</a>
+
+            {% elif user.rol == "cliente" %}
+                <a href="{% url 'clientes:historial' %}" class="list-group-item list-group-item-action bg-primary text-white">Mis Compras</a>
+                <a href="{% url 'alertas:list' %}" class="list-group-item list-group-item-action bg-primary text-white">Promociones</a>
+            {% endif %}
+
+            <a href="{% url 'usuario:logout' %}" class="list-group-item list-group-item-action bg-danger text-white">Cerrar sesión</a>
+        </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Contenido principal -->
+    <div id="page-content-wrapper" class="w-100">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-success" id="menu-toggle">☰ Menú</button>
+                <span class="navbar-text ms-auto fw-bold text-success">
+                    Bienvenido, {{ user.username|capfirst }}
+                </span>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-4">
+            {% if user.rol == "administrador" %}
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="text-primary mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Panel Administrativo
+                        </h2>
+                        <p class="text-muted mb-0">Resumen general del sistema Farmacorp</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#reportModal">
+                            <i class="fas fa-file-pdf me-2"></i>Generar Reporte
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-calendar me-2"></i>Este Mes
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Hoy</a></li>
+                                <li><a class="dropdown-item" href="#">Esta Semana</a></li>
+                                <li><a class="dropdown-item" href="#">Este Mes</a></li>
+                                <li><a class="dropdown-item" href="#">Este Año</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="stat-icon bg-primary bg-opacity-10 text-primary rounded p-3">
+                                            <i class="fas fa-shopping-cart fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="card-subtitle text-muted mb-1">Total Ventas</h6>
+                                        <h3 class="card-title mb-0">{{ total_ventas }}</h3>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center text-success">
+                                    <i class="fas fa-arrow-up me-2"></i>
+                                    <span class="small">12% más que el mes pasado</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="stat-icon bg-success bg-opacity-10 text-success rounded p-3">
+                                            <i class="fas fa-users fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="card-subtitle text-muted mb-1">Clientes</h6>
+                                        <h3 class="card-title mb-0">{{ total_clientes }}</h3>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center text-success">
+                                    <i class="fas fa-arrow-up me-2"></i>
+                                    <span class="small">5% más que el mes pasado</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="stat-icon bg-warning bg-opacity-10 text-warning rounded p-3">
+                                            <i class="fas fa-box fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="card-subtitle text-muted mb-1">Productos</h6>
+                                        <h3 class="card-title mb-0">{{ total_productos }}</h3>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center text-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span class="small">20 productos con bajo stock</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="stat-icon bg-danger bg-opacity-10 text-danger rounded p-3">
+                                            <i class="fas fa-bell fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h6 class="card-subtitle text-muted mb-1">Alertas Activas</h6>
+                                        <h3 class="card-title mb-0">{{ total_alertas }}</h3>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center text-danger">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    <span class="small">3 alertas requieren atención</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-area me-2"></i>Tendencia de Ventas
+                                </h5>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary">Diario</button>
+                                    <button class="btn btn-sm btn-outline-secondary active">Semanal</button>
+                                    <button class="btn btn-sm btn-outline-secondary">Mensual</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="salesTrendChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-pie me-2"></i>Distribución de Ventas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="salesDistributionChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Recent Activity -->
+                <div class="row g-4">
+                    <div class="col-xl-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent border-0">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <a href="{% url 'ventas:venta_create' %}" class="card quick-action h-100 text-decoration-none">
+                                            <div class="card-body text-center">
+                                                <div class="display-4 text-primary mb-2">
+                                                    <i class="fas fa-cart-plus"></i>
+                                                </div>
+                                                <h6 class="card-title mb-0">Nueva Venta</h6>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <a href="{% url 'productos:producto_create' %}" class="card quick-action h-100 text-decoration-none">
+                                            <div class="card-body text-center">
+                                                <div class="display-4 text-success mb-2">
+                                                    <i class="fas fa-box-open"></i>
+                                                </div>
+                                                <h6 class="card-title mb-0">Añadir Producto</h6>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <a href="{% url 'reportes:crear' %}" class="card quick-action h-100 text-decoration-none">
+                                            <div class="card-body text-center">
+                                                <div class="display-4 text-warning mb-2">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </div>
+                                                <h6 class="card-title mb-0">Generar Reporte</h6>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <a href="{% url 'inventario:create' %}" class="card quick-action h-100 text-decoration-none">
+                                            <div class="card-body text-center">
+                                                <div class="display-4 text-danger mb-2">
+                                                    <i class="fas fa-clipboard-check"></i>
+                                                </div>
+                                                <h6 class="card-title mb-0">Revisar Stock</h6>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-history me-2"></i>Actividad Reciente
+                                </h5>
+                                <a href="#" class="btn btn-sm btn-link text-decoration-none">Ver todo</a>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="list-group list-group-flush">
+                                    {% for activity in recent_activities|slice:":5" %}
+                                    <div class="list-group-item px-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="activity-icon rounded-circle p-2
+                                                    {% if activity.type == 'venta' %}bg-success bg-opacity-10 text-success
+                                                    {% elif activity.type == 'producto' %}bg-primary bg-opacity-10 text-primary
+                                                    {% elif activity.type == 'alerta' %}bg-danger bg-opacity-10 text-danger
+                                                    {% else %}bg-info bg-opacity-10 text-info{% endif %}">
+                                                    <i class="fas fa-{{ activity.icon }}"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <p class="mb-0">{{ activity.description }}</p>
+                                                <small class="text-muted">{{ activity.timestamp }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-clock fa-2x mb-2"></i>
+                                            <p class="mb-0">No hay actividad reciente</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% elif user.rol == "farmaceutico" %}
+                <h1 class="text-primary">Panel del Farmacéutico</h1>
+                <p class="lead">Acceso rápido a ventas, recetas y alertas.</p>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="ventasChart"></canvas>
+                    </div>
+                </div>
+
+            {% elif user.rol == "encargado_almacen" %}
+                <h1 class="text-primary">Panel de Almacén</h1>
+                <p class="lead">Supervisión del inventario y control de stock.</p>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                </div>
+
+            {% elif user.rol == "cliente" %}
+                <h1 class="text-primary">Bienvenido a Farmacorp</h1>
+                <p class="lead">Consulta tus compras y recibe alertas de tus medicamentos.</p>
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Mis Compras Recientes</h5>
+                        <ul class="list-unstyled">
+                            {% for compra in compras %}
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    {{ compra.fecha }} - <strong>{{ compra.total }} Bs</strong>
+                                </li>
+                            {% empty %}
+                                <li class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    No tienes compras registradas.
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // === Tendencia de Ventas (Semanal) ===
+    const salesTrendCtx = document.getElementById('salesTrendChart');
+    if (salesTrendCtx) {
+        const salesByDay = [
+            {% if sales_by_day %}
+                {% for day_sales in sales_by_day %}{{ day_sales }}{% if not forloop.last %},{% endif %}{% endfor %}
+            {% else %}
+                1200, 1900, 3000, 2500, 2100, 2800, 3200
+            {% endif %}
+        ];
+        new Chart(salesTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+                datasets: [{
+                    label: 'Ventas (Bs)',
+                    data: salesByDay,
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.08)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgba(13, 110, 253, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { callback: value => 'Bs ' + value.toLocaleString() }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { mode: 'index', intersect: false }
+                }
+            }
+        });
+    }
+
+    // === Distribución de Ventas (Pie) ===
+    const salesDistribCtx = document.getElementById('salesDistributionChart');
+    if (salesDistribCtx) {
+        const salesByBranch = (function() {
+            {% if sales_by_branch %}return [{% for branch_sales in sales_by_branch %}{{ branch_sales }}{% if not forloop.last %},{% endif %}{% endfor %}];{% else %}return [3500, 2800, 2100];{% endif %}
+        })();
+        new Chart(salesDistribCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Farmacia Central', 'Farmacia Norte', 'Farmacia Sur'],
+                datasets: [{
+                    data: salesByBranch,
+                    backgroundColor: [
+                        'rgba(13, 110, 253, 0.8)',
+                        'rgba(25, 135, 84, 0.8)',
+                        'rgba(255, 193, 7, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(13, 110, 253, 1)',
+                        'rgba(25, 135, 84, 1)',
+                        'rgba(255, 193, 7, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => 'Bs ' + context.raw.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // === Gráfico Ventas (Farmacéutico) ===
+    const ventasChartCtx = document.getElementById('ventasChart');
+    if (ventasChartCtx) {
+        new Chart(ventasChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Ventas Mensuales (Bs)',
+                    data: [1200, 1900, 3000, 2500, 2100, 2800],
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // === Gráfico Stock (Encargado Almacén) ===
+    const stockChartCtx = document.getElementById('stockChart');
+    if (stockChartCtx) {
+        new Chart(stockChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Paracetamol', 'Ibuprofeno', 'Amoxicilina', 'Omeprazol', 'Metformina'],
+                datasets: [{
+                    label: 'Stock en Inventario',
+                    data: [450, 320, 180, 290, 510],
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // === Toggle Menu ===
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar-wrapper');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('d-none');
+        });
+    }
+});
+</script>
+{% endblock %}

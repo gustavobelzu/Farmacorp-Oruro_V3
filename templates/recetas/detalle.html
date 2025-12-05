@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Receta #{{ receta.id_receta }}{% endblock %}
+
+{% block extrahead %}
+<style>
+    .receta-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .medicine-card {
+        border-left: 4px solid #667eea;
+        border-radius: 0.5rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .info-item {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        font-size: 1.125rem;
+        color: #212529;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'recetas:list' %}">Recetas</a></li>
+            <li class="breadcrumb-item active">Receta #{{ receta.id_receta }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="receta-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2 class="mb-2">
+                    <i class="fas fa-prescription-bottle me-2"></i>Receta #{{ receta.id_receta }}
+                </h2>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-calendar me-2"></i>Emitida el {{ receta.fecha_emision|date:"d \d\e F \d\e Y" }}
+                </p>
+            </div>
+            {% if es_cliente %}
+            <div>
+                {% if dias_restantes > 0 %}
+                    <span class="badge bg-success bg-opacity-75" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-check-circle me-2"></i>Vigente ({{ dias_restantes }} días)
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger bg-opacity-75" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-exclamation-circle me-2"></i>Vencida
+                    </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Información de la Receta -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle text-primary me-2"></i>Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Paciente</div>
+                            <div class="info-value">{{ receta.cliente.nombre }} {{ receta.cliente.apellido }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">CI del Paciente</div>
+                            <div class="info-value">{{ receta.cliente.ci }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Médico Prescriptor</div>
+                            <div class="info-value">Dr. {{ receta.Matricula_medico }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Empleado Registrador</div>
+                            <div class="info-value">{{ receta.empleado.nombre }} {{ receta.empleado.apellido }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Medicamento Principal</div>
+                            <div class="info-value">{{ receta.Medicamento }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Cantidad</div>
+                            <div class="info-value">{{ receta.Cantidad }} unidades</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medicamentos Detallados (DetalleReceta) -->
+            {% if detalles %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-pills text-primary me-2"></i>Medicamentos Prescritos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for detalle in detalles %}
+                    <div class="medicine-card card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="fas fa-capsules me-2"></i>{{ detalle.producto.nombre }}
+                                    </h6>
+                                    <dl class="row text-sm mb-0">
+                                        <dt class="col-sm-4">Código:</dt>
+                                        <dd class="col-sm-8">{{ detalle.producto.codigo }}</dd>
+
+                                        <dt class="col-sm-4">Dosis:</dt>
+                                        <dd class="col-sm-8">
+                                            <strong>{{ detalle.dosis }}</strong>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Frecuencia:</dt>
+                                        <dd class="col-sm-8">
+                                            <strong>{{ detalle.frecuencia }}</strong>
+                                        </dd>
+
+                                        <dt class="col-sm-4">Duración:</dt>
+                                        <dd class="col-sm-8">
+                                            <strong>{{ detalle.duracion }}</strong>
+                                        </dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="bg-light p-3 rounded">
+                                        <h6 class="text-muted mb-2">
+                                            <i class="fas fa-sticky-note me-2"></i>Instrucciones
+                                        </h6>
+                                        <p class="mb-0">{{ detalle.instrucciones }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Sin medicamentos detallados.</strong> Esta receta no tiene medicamentos agregados en el sistema.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Acciones -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs text-primary me-2"></i>Acciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if not es_cliente %}
+                        <a href="{% url 'recetas:editar' receta.pk %}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-edit me-2"></i>Editar Receta y Medicamentos
+                        </a>
+                        <a href="{% url 'recetas:eliminar' receta.pk %}" class="btn btn-danger w-100 mb-2">
+                            <i class="fas fa-trash me-2"></i>Eliminar Receta
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'recetas:list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Listado
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-check text-primary me-2"></i>Vigencia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if es_cliente %}
+                        {% if dias_restantes > 0 %}
+                            <div class="alert alert-success mb-0">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Receta Vigente</strong>
+                                <br>
+                                <small>Válida por {{ dias_restantes }} día{{ dias_restantes|pluralize }}</small>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Receta Vencida</strong>
+                                <br>
+                                <small>Vencida hace {{ dias_vencidos }} día{{ dias_vencidos|pluralize }}</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted small">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Las recetas son válidas por 30 días desde su emisión.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

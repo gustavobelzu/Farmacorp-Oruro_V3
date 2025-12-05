@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Sucursal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-danger mb-0">
+                <i class="fas fa-trash-alt me-2"></i>Eliminar Sucursal
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'farmacia:listf' %}">Sucursales</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Card -->
+    <div class="card shadow-sm border-danger">
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                <h4 class="text-danger">¿Estás seguro de que deseas eliminar esta sucursal?</h4>
+                <p class="lead mb-0">Esta acción eliminará permanentemente la sucursal y toda su información asociada.</p>
+            </div>
+
+            <!-- Sucursal Details -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="alert alert-light border">
+                        <h6 class="alert-heading mb-3">
+                            <i class="fas fa-store me-2"></i>Información de la Sucursal
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li>
+                                <strong>Nombre:</strong>
+                                {{ sucursal.nombre }}
+                            </li>
+                            <li>
+                                <strong>Departamento:</strong>
+                                {{ sucursal.departamento }}
+                            </li>
+                            <li>
+                                <strong>Dirección:</strong>
+                                {{ sucursal.direccion }}
+                            </li>
+                            <li>
+                                <strong>NIT:</strong>
+                                {{ sucursal.nit }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="alert alert-light border">
+                        <h6 class="alert-heading mb-3">
+                            <i class="fas fa-clinic-medical me-2"></i>Información de la Farmacia
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li>
+                                <strong>Farmacia:</strong>
+                                {{ sucursal.farmacia.nombre_farmacia }}
+                            </li>
+                            <li>
+                                <strong>Empleados:</strong>
+                                {{ sucursal.empleados.count|default:"0" }}
+                            </li>
+                            <li>
+                                <strong>Ventas:</strong>
+                                {{ total_ventas|default:"0" }}
+                            </li>
+                            <li>
+                                <strong>Productos:</strong>
+                                {{ total_productos|default:"0" }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Messages -->
+            <div class="alert alert-warning mt-3">
+                <h6 class="alert-heading mb-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>Consecuencias de la Eliminación
+                </h6>
+                <ul class="mb-0">
+                    <li>Se eliminará todo el historial de ventas de la sucursal</li>
+                    <li>Se perderá el registro de empleados asignados</li>
+                    <li>Se eliminará el inventario asociado</li>
+                    <li>Las transacciones no podrán ser recuperadas</li>
+                    <li>Esta acción no se puede deshacer</li>
+                </ul>
+            </div>
+
+            <form method="post" class="d-flex justify-content-center gap-2 mt-4">
+                {% csrf_token %}
+                <a href="{% url 'farmacia:listf' %}" class="btn btn-light">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>Confirmar Eliminación
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

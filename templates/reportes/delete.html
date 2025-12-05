@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Reporte{% endblock %}
+{% block content %}
+<h2>Eliminar registro de Reporte {{ object.id_inventario }}?</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'reportes:list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}
